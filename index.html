@@ -147,17 +147,96 @@
 
 <script>
 "use strict";
-const APP_VERSION = "0.2.0";
-const EDITION = "2026.08.10 タイ編";   /* ホテルデータを収録した日付 */
+const APP_VERSION = "0.3.0";
+const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
    実データ主義：実在のホテルだけを入れる（名称・都市・座標は公式/実測のみ。捏造禁止）。
    1行 = {id, name, city, pref, lat, lng, brand, cat}
      brand: BRANDS のキー
      cat  : luxury / premium / select / longstay（Bonvoyの公式区分に準拠）
-   収録: タイ編（2026.08.10）。全件 marriott.com / ritzcarlton.com 公式ページで名称・座標を確認済み。
-   対象ブランド = フルサービス全部＋コートヤード/モクシー/アロフト（要件定義書 §3.1） */
+   収録: タイ・日本編（2026.08.10）。全件 marriott.com / ritzcarlton.com 公式ページで名称・座標を確認済み。
+   対象ブランド = フルサービス全部＋コートヤード/モクシー/アロフト（要件定義書 §3.1）
+   ブルガリ東京はBonvoy不参加、シーガイア/淡路/ナゴヤキャッスル/キロロ等は離脱済みのため未収録 */
 const HOTELS = [
+  /* ============ 日本 ============ */
+  /* --- 東京 --- */
+  {id:"ritz-tokyo",        name:"ザ・リッツ・カールトン東京",         city:"東京",       pref:"東京都",   lat:35.665981, lng:139.731122,brand:"ritz",        cat:"luxury"},
+  {id:"edition-toranomon", name:"東京エディション虎ノ門",             city:"東京",       pref:"東京都",   lat:35.665191, lng:139.745315,brand:"edition",     cat:"luxury"},
+  {id:"edition-ginza",     name:"東京エディション銀座",               city:"東京",       pref:"東京都",   lat:35.672608, lng:139.767250,brand:"edition",     cat:"luxury"},
+  {id:"princegallery",     name:"ザ・プリンスギャラリー東京紀尾井町", city:"東京",       pref:"東京都",   lat:35.680139, lng:139.737215,brand:"luxcol",      cat:"luxury"},
+  {id:"jw-tokyo",          name:"JWマリオット・ホテル東京",           city:"東京",       pref:"東京都",   lat:35.634389, lng:139.739250,brand:"jw",          cat:"luxury"},
+  {id:"marriott-tokyo",    name:"東京マリオットホテル",               city:"東京",       pref:"東京都",   lat:35.621500, lng:139.737200,brand:"marriott",    cat:"premium"},
+  {id:"westin-tokyo",      name:"ウェスティンホテル東京",             city:"東京",       pref:"東京都",   lat:35.641516, lng:139.715356,brand:"westin",      cat:"premium"},
+  {id:"sheraton-miyako-tokyo",name:"シェラトン都ホテル東京",          city:"東京",       pref:"東京都",   lat:35.639393, lng:139.730344,brand:"sheraton",    cat:"premium"},
+  {id:"mesm",              name:"メズム東京",                         city:"東京",       pref:"東京都",   lat:35.655886, lng:139.762753,brand:"autograph",   cat:"premium"},
+  {id:"sakuratower",       name:"ザ・プリンスさくらタワー東京",       city:"東京",       pref:"東京都",   lat:35.630967, lng:139.735453,brand:"autograph",   cat:"premium"},
+  {id:"cy-ginza",          name:"コートヤード銀座東武",               city:"東京",       pref:"東京都",   lat:35.668381, lng:139.765100,brand:"courtyard",   cat:"select"},
+  {id:"cy-tokyostation",   name:"コートヤード東京ステーション",       city:"東京",       pref:"東京都",   lat:35.677847, lng:139.769764,brand:"courtyard",   cat:"select"},
+  {id:"aloft-ginza",       name:"アロフト東京銀座",                   city:"東京",       pref:"東京都",   lat:35.668970, lng:139.765700,brand:"aloft",       cat:"select"},
+  {id:"moxy-kinshicho",    name:"モクシー東京錦糸町",                 city:"東京",       pref:"東京都",   lat:35.693561, lng:139.813275,brand:"moxy",        cat:"select"},
+  /* --- 横浜・舞浜・日光 --- */
+  {id:"yokohama-sheraton", name:"横浜ベイシェラトン",                 city:"横浜",       pref:"神奈川県", lat:35.467032, lng:139.621038,brand:"sheraton",    cat:"premium"},
+  {id:"westin-yokohama",   name:"ウェスティンホテル横浜",             city:"横浜",       pref:"神奈川県", lat:35.457417, lng:139.627528,brand:"westin",      cat:"premium"},
+  {id:"sheraton-tokyobay", name:"シェラトン・グランデ・トーキョーベイ", city:"舞浜",     pref:"千葉県",   lat:35.625890, lng:139.877733,brand:"sheraton",    cat:"premium"},
+  {id:"ritz-nikko",        name:"ザ・リッツ・カールトン日光",         city:"日光",       pref:"栃木県",   lat:36.738361, lng:139.497583,brand:"ritz",        cat:"luxury"},
+  /* --- 北日本 --- */
+  {id:"westin-sendai",     name:"ウェスティンホテル仙台",             city:"仙台",       pref:"宮城県",   lat:38.256532, lng:140.876162,brand:"westin",      cat:"premium"},
+  {id:"cy-sapporo",        name:"コートヤード札幌",                   city:"札幌",       pref:"北海道",   lat:43.048651, lng:141.357183,brand:"courtyard",   cat:"select"},
+  {id:"niseko-reserve",    name:"東山ニセコビレッジ リッツ・カールトン・リザーブ", city:"ニセコ", pref:"北海道", lat:42.845738, lng:140.684978,brand:"ritz",   cat:"luxury"},
+  {id:"westin-rusutsu",    name:"ウェスティン ルスツリゾート",        city:"ルスツ",     pref:"北海道",   lat:42.747761, lng:140.905377,brand:"westin",      cat:"premium"},
+  /* --- 中部 --- */
+  {id:"nagoya-associa",    name:"名古屋マリオットアソシア",           city:"名古屋",     pref:"愛知県",   lat:35.170305, lng:136.882948,brand:"marriott",    cat:"premium"},
+  {id:"tiad",              name:"TIAD",                               city:"名古屋",     pref:"愛知県",   lat:35.163844, lng:136.909744,brand:"autograph",   cat:"premium"},
+  {id:"cy-nagoya",         name:"コートヤード名古屋",                 city:"名古屋",     pref:"愛知県",   lat:35.165852, lng:136.893060,brand:"courtyard",   cat:"select"},
+  {id:"marriott-karuizawa",name:"軽井沢マリオット",                   city:"軽井沢",     pref:"長野県",   lat:36.339706, lng:138.577480,brand:"marriott",    cat:"premium"},
+  {id:"cy-hakuba",         name:"コートヤード白馬",                   city:"白馬",       pref:"長野県",   lat:36.691417, lng:137.837828,brand:"courtyard",   cat:"select"},
+  {id:"marriott-yamanaka", name:"富士マリオット山中湖",               city:"山中湖",     pref:"山梨県",   lat:35.439406, lng:138.921031,brand:"marriott",    cat:"premium"},
+  {id:"marriott-shuzenji", name:"伊豆マリオット修善寺",               city:"伊豆",       pref:"静岡県",   lat:34.956369, lng:138.914869,brand:"marriott",    cat:"premium"},
+  {id:"cy-fukui",          name:"コートヤード福井",                   city:"福井",       pref:"福井県",   lat:36.062210, lng:136.221180,brand:"courtyard",   cat:"select"},
+  /* --- 大阪 --- */
+  {id:"ritz-osaka",        name:"ザ・リッツ・カールトン大阪",         city:"大阪",       pref:"大阪府",   lat:34.698880, lng:135.492750,brand:"ritz",        cat:"luxury"},
+  {id:"stregis-osaka",     name:"セントレジス大阪",                   city:"大阪",       pref:"大阪府",   lat:34.683244, lng:135.501152,brand:"stregis",     cat:"luxury"},
+  {id:"w-osaka",           name:"W大阪",                              city:"大阪",       pref:"大阪府",   lat:34.677810, lng:135.499920,brand:"w",           cat:"luxury"},
+  {id:"marriott-miyako",   name:"大阪マリオット都",                   city:"大阪",       pref:"大阪府",   lat:34.645990, lng:135.514274,brand:"marriott",    cat:"premium"},
+  {id:"sheraton-miyako-osaka",name:"シェラトン都ホテル大阪",          city:"大阪",       pref:"大阪府",   lat:34.665504, lng:135.520326,brand:"sheraton",    cat:"premium"},
+  {id:"westin-osaka",      name:"ウェスティンホテル大阪",             city:"大阪",       pref:"大阪府",   lat:34.704617, lng:135.489698,brand:"westin",      cat:"premium"},
+  {id:"osaka-station",     name:"大阪ステーションホテル",             city:"大阪",       pref:"大阪府",   lat:34.700810, lng:135.494400,brand:"autograph",   cat:"premium"},
+  {id:"moxy-umeda",        name:"モクシー大阪梅田",                   city:"大阪",       pref:"大阪府",   lat:34.700759, lng:135.486813,brand:"moxy",        cat:"select"},
+  {id:"moxy-honmachi",     name:"モクシー大阪本町",                   city:"大阪",       pref:"大阪府",   lat:34.685631, lng:135.506200,brand:"moxy",        cat:"select"},
+  {id:"aloft-umeda",       name:"アロフト大阪梅田",                   city:"大阪",       pref:"大阪府",   lat:34.695017, lng:135.495502,brand:"aloft",       cat:"select"},
+  {id:"cy-shinosaka",      name:"コートヤード新大阪",                 city:"大阪",       pref:"大阪府",   lat:34.734246, lng:135.498983,brand:"courtyard",   cat:"select"},
+  {id:"cy-osakahonmachi",  name:"コートヤード大阪本町",               city:"大阪",       pref:"大阪府",   lat:34.682382, lng:135.505356,brand:"courtyard",   cat:"select"},
+  /* --- 京都・奈良 --- */
+  {id:"ritz-kyoto",        name:"ザ・リッツ・カールトン京都",         city:"京都",       pref:"京都府",   lat:35.013620, lng:135.770870,brand:"ritz",        cat:"luxury"},
+  {id:"suiran",            name:"翠嵐",                               city:"京都",       pref:"京都府",   lat:35.013801, lng:135.673520,brand:"luxcol",      cat:"luxury"},
+  {id:"mitsui-kyoto",      name:"ホテル ザ・ミツイ京都",              city:"京都",       pref:"京都府",   lat:35.012892, lng:135.753490,brand:"luxcol",      cat:"luxury"},
+  {id:"westin-miyako-kyoto",name:"ウェスティン都ホテル京都",          city:"京都",       pref:"京都府",   lat:35.008839, lng:135.787969,brand:"westin",      cat:"premium"},
+  {id:"prince-takaragaike",name:"ザ・プリンス京都宝ヶ池",             city:"京都",       pref:"京都府",   lat:35.063307, lng:135.781340,brand:"autograph",   cat:"premium"},
+  {id:"chapter-kyoto",     name:"ザ・チャプター京都",                 city:"京都",       pref:"京都府",   lat:35.013971, lng:135.769118,brand:"tribute",     cat:"premium"},
+  {id:"moxy-kyoto",        name:"モクシー京都",                       city:"京都",       pref:"京都府",   lat:35.009970, lng:135.742869,brand:"moxy",        cat:"select"},
+  {id:"cy-shijo",          name:"コートヤード京都四条烏丸",           city:"京都",       pref:"京都府",   lat:35.001396, lng:135.759291,brand:"courtyard",   cat:"select"},
+  {id:"jw-nara",           name:"JWマリオット・奈良",                 city:"奈良",       pref:"奈良県",   lat:34.683750, lng:135.805333,brand:"jw",          cat:"luxury"},
+  {id:"shisui",            name:"紫翠",                               city:"奈良",       pref:"奈良県",   lat:34.685620, lng:135.835470,brand:"luxcol",      cat:"luxury"},
+  /* --- 神戸・滋賀・和歌山 --- */
+  {id:"kobe-sheraton",     name:"神戸ベイシェラトン",                 city:"神戸",       pref:"兵庫県",   lat:34.689739, lng:135.270061,brand:"sheraton",    cat:"premium"},
+  {id:"kobe-marriott",     name:"神戸マリオット",                     city:"神戸",       pref:"兵庫県",   lat:34.679067, lng:135.180072,brand:"marriott",    cat:"premium"},
+  {id:"biwako",            name:"琵琶湖マリオット",                   city:"琵琶湖",     pref:"滋賀県",   lat:35.125226, lng:135.954984,brand:"marriott",    cat:"premium"},
+  {id:"shirahama",         name:"南紀白浜マリオット",                 city:"白浜",       pref:"和歌山県", lat:33.678414, lng:135.345233,brand:"marriott",    cat:"premium"},
+  /* --- 中国・九州 --- */
+  {id:"sheraton-hiroshima",name:"シェラトングランド広島",             city:"広島",       pref:"広島県",   lat:34.397963, lng:132.477785,brand:"sheraton",    cat:"premium"},
+  {id:"yoruya",            name:"撚る屋",                             city:"倉敷",       pref:"岡山県",   lat:34.597102, lng:133.776216,brand:"designhotels",cat:"premium"},
+  {id:"ritz-fukuoka",      name:"ザ・リッツ・カールトン福岡",         city:"福岡",       pref:"福岡県",   lat:33.589657, lng:130.394804,brand:"ritz",        cat:"luxury"},
+  {id:"nagasaki-marriott", name:"長崎マリオット",                     city:"長崎",       pref:"長崎県",   lat:32.751974, lng:129.869487,brand:"marriott",    cat:"premium"},
+  {id:"iki-retreat",       name:"壱岐リトリート海里村上",             city:"壱岐",       pref:"長崎県",   lat:33.804889, lng:129.684359,brand:"designhotels",cat:"premium"},
+  {id:"sheraton-kagoshima",name:"シェラトン鹿児島",                   city:"鹿児島",     pref:"鹿児島県", lat:31.579149, lng:130.553540,brand:"sheraton",    cat:"premium"},
+  /* --- 沖縄 --- */
+  {id:"ritz-okinawa",      name:"ザ・リッツ・カールトン沖縄",         city:"沖縄",       pref:"沖縄県",   lat:26.528241, lng:127.939879,brand:"ritz",        cat:"luxury"},
+  {id:"sheraton-sunmarina",name:"シェラトン沖縄サンマリーナ",         city:"沖縄",       pref:"沖縄県",   lat:26.461118, lng:127.811709,brand:"sheraton",    cat:"premium"},
+  {id:"ren-okinawa",       name:"ルネッサンスリゾートオキナワ",       city:"沖縄",       pref:"沖縄県",   lat:26.435154, lng:127.788020,brand:"renaissance", cat:"premium"},
+  {id:"cy-okinawa",        name:"コートヤード沖縄リゾート",           city:"沖縄",       pref:"沖縄県",   lat:26.536428, lng:127.945215,brand:"courtyard",   cat:"select"},
+  {id:"iraph-sui",         name:"イラフSUI沖縄宮古",                  city:"宮古島",     pref:"沖縄県",   lat:24.809381, lng:125.188749,brand:"luxcol",      cat:"luxury"},
+  /* ============ タイ ============ */
   /* --- プーケット --- */
   {id:"jw-phuket",         name:"JWマリオット・プーケット",           city:"プーケット", pref:"タイ", lat:8.16589,   lng:98.29509,  brand:"jw",          cat:"luxury"},
   {id:"naka-island",       name:"ナカアイランド",                     city:"プーケット", pref:"タイ", lat:8.057353,  lng:98.458411, brand:"luxcol",      cat:"luxury"},
@@ -297,7 +376,7 @@ let curTab="rally";
 function render(){
   document.getElementById("edition").textContent=EDITION;
   document.getElementById("verNote").textContent=
-    `Bonvoyラリー v${APP_VERSION}。タイの対象ブランド${HOTELS.length}軒を収録（${EDITION}）。記録はこの端末に保存されます。`;
+    `Bonvoyラリー v${APP_VERSION}。日本・タイの対象ブランド${HOTELS.length}軒を収録（${EDITION}）。記録はこの端末に保存されます。`;
   const n=Object.keys(state.stays).filter(id=>byId[id]).length;
   document.getElementById("total").innerHTML=`判子 ${n}<span style="font-size:10px">宿</span>`;
   document.getElementById("quests").innerHTML=
