@@ -83,6 +83,11 @@
   .bcell svg{width:100%;height:auto;display:block}
   .bnm{display:block;font-size:8.5px;color:var(--mid);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bnm.off{color:#C9B58F}
+  .cohead{display:flex;align-items:center;gap:8px;margin:24px 2px 2px;font-size:15px;font-weight:800;letter-spacing:.15em;
+    border-bottom:2px dashed var(--line2);padding-bottom:8px}
+  .cohead .coseal{width:26px;height:26px;border-radius:6px;border:2px solid var(--navy);color:var(--navy);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;letter-spacing:0;
+    font-family:'Hiragino Mincho ProN','Yu Mincho',serif;transform:rotate(-4deg)}
   .mono{font-family:ui-monospace,monospace}
   .choosebtn{display:flex;justify-content:space-between;width:100%;background:var(--panel);border:1.5px solid var(--line2);
     border-radius:12px;padding:13px 14px;margin-bottom:9px;font-size:14px;color:var(--text)}
@@ -167,7 +172,8 @@ const BRANDS = {
   westin:    {label:"ウェスティン",           cat:"premium"},
   renaissance:{label:"ルネッサンス",          cat:"premium"},
   autograph: {label:"オートグラフ",           cat:"premium"},
-  mercan:    {label:"メリディアン",           cat:"premium"},
+  lemeridien:{label:"ルメリディアン",         cat:"premium"},
+  tribute:   {label:"トリビュート",           cat:"premium"},
   courtyard: {label:"コートヤード",           cat:"select"},
   fourpoints:{label:"フォーポイント",         cat:"select"},
   fairfield: {label:"フェアフィールド",       cat:"select"},
@@ -177,6 +183,9 @@ const BRANDS = {
   residence: {label:"レジデンス・イン",       cat:"longstay"},
 };
 const CAT_LABEL={luxury:"ラグジュアリー",premium:"プレミアム",select:"セレクト",longstay:"長期滞在"};
+/* 判子帳・ラリーは基本国別＋エリア（city）別。prefが国名ならその国、それ以外（都道府県）は日本 */
+const COUNTRIES={"日本":"日","タイ":"泰","ベトナム":"越","シンガポール":"星"};
+const countryOf=h=>COUNTRIES[h.pref]!==undefined&&h.pref!=="日本"?h.pref:"日本";
 
 let byId={};
 function reindex(){ byId=Object.fromEntries(HOTELS.map(h=>[h.id,h])); }
@@ -195,6 +204,14 @@ const QUESTS=[
   {id:"brands",seal:"紋", name:"ブランド集め", desc:"泊まったブランドの数", goal:"brands"},
   {id:"all",   seal:"制", name:"全店制覇", desc:"収録ホテルをすべて踏破", goal:"all", test:h=>true},
 ];
+/* 国制覇（2カ国以上収録時のみ）とエリア制覇（2軒以上のエリアのみ）をHOTELSから動的生成 */
+{
+  const cs=[...new Set(HOTELS.map(countryOf))];
+  if(cs.length>=2) cs.forEach(c=>QUESTS.push(
+    {id:"c-"+c, seal:COUNTRIES[c]||c[0], name:`${c}制覇`, desc:`${c}の収録ホテルをすべて踏破`, goal:"all", test:h=>countryOf(h)===c}));
+  [...new Set(HOTELS.map(h=>h.city))].filter(a=>a&&HOTELS.filter(h=>h.city===a).length>=2).forEach(a=>QUESTS.push(
+    {id:"a-"+a, seal:a[0], name:`${a}巡り`, desc:`${a}のホテルをすべて踏破`, goal:"all", test:h=>h.city===a}));
+}
 QUESTS.forEach(q=>q.targets=(q.test?HOTELS.filter(q.test):HOTELS).map(h=>h.id));
 
 /* ---------- 状態 ---------- */
@@ -341,13 +358,20 @@ function hotelSeal(h,o={}){
 function renderBook(){
   const el=document.getElementById("bookView");
   if(!HOTELS.length){ el.innerHTML=`<div class="notice" style="margin-top:16px">ホテルデータが入ると、ここに判子が並びます。</div>`; return; }
-  const cats=["luxury","premium","select","longstay"];
-  el.innerHTML=cats.map(c=>{
-    const hs=HOTELS.filter(h=>(BRANDS[h.brand]||{}).cat===c);
-    if(!hs.length) return "";
-    const n=hs.filter(h=>stamped(h.id)).length;
-    return `<div class="eyebrow" style="margin:18px 2px 9px">${CAT_LABEL[c]}　${n}<span style="letter-spacing:0">/${hs.length}</span></div>
-      <div class="bgrid">`+hs.map(h=>`<button class="bcell" onclick="window.__hotel('${h.id}')">${hotelSeal(h,{hidden:!stamped(h.id)})}<span class="bnm${stamped(h.id)?"":" off"}">${esc(h.name)}</span></button>`).join("")+`</div>`;
+  /* 基本国別 → エリア（city）別。エリア内は区分順→名前順 */
+  const catOrder={luxury:0,premium:1,select:2,longstay:3};
+  const grid=hs=>`<div class="bgrid">`+hs.map(h=>`<button class="bcell" onclick="window.__hotel('${h.id}')">${hotelSeal(h,{hidden:!stamped(h.id)})}<span class="bnm${stamped(h.id)?"":" off"}">${esc(h.name)}</span></button>`).join("")+`</div>`;
+  el.innerHTML=Object.keys(COUNTRIES).map(c=>{
+    const chs=HOTELS.filter(h=>countryOf(h)===c);
+    if(!chs.length) return "";
+    const cn=chs.filter(h=>stamped(h.id)).length;
+    const areas=[...new Set(chs.map(h=>h.city))];
+    return `<div class="cohead"><span class="coseal">${COUNTRIES[c]}</span>${esc(c)}　<span class="mono" style="font-size:11px;color:var(--muted)">${cn}/${chs.length}</span></div>`
+      +areas.map(a=>{
+        const hs=chs.filter(h=>h.city===a).sort((x,y)=>(catOrder[(BRANDS[x.brand]||{}).cat]??9)-(catOrder[(BRANDS[y.brand]||{}).cat]??9)||x.name.localeCompare(y.name,"ja"));
+        const n=hs.filter(h=>stamped(h.id)).length;
+        return `<div class="eyebrow" style="margin:15px 2px 9px">${esc(a)}　${n}<span style="letter-spacing:0">/${hs.length}</span></div>`+grid(hs);
+      }).join("");
   }).join("");
 }
 
