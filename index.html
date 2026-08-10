@@ -147,16 +147,72 @@
 
 <script>
 "use strict";
-const APP_VERSION = "0.1.0";
-const EDITION = "準備中";   /* ホテルデータを収録した日付を入れる */
+const APP_VERSION = "0.2.0";
+const EDITION = "2026.08.10 タイ編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
    実データ主義：実在のホテルだけを入れる（名称・都市・座標は公式/実測のみ。捏造禁止）。
    1行 = {id, name, city, pref, lat, lng, brand, cat}
      brand: BRANDS のキー
      cat  : luxury / premium / select / longstay（Bonvoyの公式区分に準拠）
-   ★ここはまだ空。どの範囲を集めるか（日本全店/泊まった店だけ/都市圏…）を決めてから投入する */
+   収録: タイ編（2026.08.10）。全件 marriott.com / ritzcarlton.com 公式ページで名称・座標を確認済み。
+   対象ブランド = フルサービス全部＋コートヤード/モクシー/アロフト（要件定義書 §3.1） */
 const HOTELS = [
+  /* --- プーケット --- */
+  {id:"jw-phuket",         name:"JWマリオット・プーケット",           city:"プーケット", pref:"タイ", lat:8.16589,   lng:98.29509,  brand:"jw",          cat:"luxury"},
+  {id:"naka-island",       name:"ナカアイランド",                     city:"プーケット", pref:"タイ", lat:8.057353,  lng:98.458411, brand:"luxcol",      cat:"luxury"},
+  {id:"marriott-merlin",   name:"プーケット・マリオット メルリンビーチ", city:"プーケット", pref:"タイ", lat:7.883114,  lng:98.272336, brand:"marriott",    cat:"premium"},
+  {id:"marriott-naiyang",  name:"プーケット・マリオット ナイヤン",     city:"プーケット", pref:"タイ", lat:8.080786,  lng:98.288514, brand:"marriott",    cat:"premium"},
+  {id:"ren-phuket",        name:"ルネッサンス・プーケット",           city:"プーケット", pref:"タイ", lat:8.15586,   lng:98.29794,  brand:"renaissance", cat:"premium"},
+  {id:"lemeridien-phuket", name:"ルメリディアン・プーケット",         city:"プーケット", pref:"タイ", lat:7.864976,  lng:98.282286, brand:"lemeridien",  cat:"premium"},
+  {id:"lemeridien-maikhao",name:"ルメリディアン・マイカオ",           city:"プーケット", pref:"タイ", lat:8.14659,   lng:98.300256, brand:"lemeridien",  cat:"premium"},
+  {id:"westin-siray",      name:"ウェスティン・シレーベイ",           city:"プーケット", pref:"タイ", lat:7.873202,  lng:98.42838,  brand:"westin",      cat:"premium"},
+  {id:"veranda-phuket",    name:"ベランダ・リゾート・プーケット",     city:"プーケット", pref:"タイ", lat:7.816646,  lng:98.386152, brand:"autograph",   cat:"premium"},
+  {id:"naka-phuket",       name:"ナカ・プーケット",                   city:"プーケット", pref:"タイ", lat:7.926434,  lng:98.268976, brand:"designhotels",cat:"premium"},
+  {id:"cy-patong",         name:"コートヤード・パトンビーチ",         city:"プーケット", pref:"タイ", lat:7.886727,  lng:98.293884, brand:"courtyard",   cat:"select"},
+  {id:"cy-phukettown",     name:"コートヤード・プーケットタウン",     city:"プーケット", pref:"タイ", lat:7.880792,  lng:98.392959, brand:"courtyard",   cat:"select"},
+  {id:"cy-chalong",        name:"コートヤード・チャロンベイ",         city:"プーケット", pref:"タイ", lat:7.837098,  lng:98.3602,   brand:"courtyard",   cat:"select"},
+  /* --- カオラック・クラビ --- */
+  {id:"jw-khaolak",        name:"JWマリオット・カオラック",           city:"カオラック", pref:"タイ", lat:8.70147,   lng:98.24116,  brand:"jw",          cat:"luxury"},
+  {id:"marriott-khaolak",  name:"カオラック・マリオット",             city:"カオラック", pref:"タイ", lat:8.842779,  lng:98.268509, brand:"marriott",    cat:"premium"},
+  {id:"lemeridien-khaolak",name:"ルメリディアン・カオラック",         city:"カオラック", pref:"タイ", lat:8.804939,  lng:98.259425, brand:"lemeridien",  cat:"premium"},
+  {id:"phulaybay",         name:"プーレイベイ リッツ・カールトン・リザーブ", city:"クラビ", pref:"タイ", lat:8.08494, lng:98.74568, brand:"ritz",        cat:"luxury"},
+  /* --- バンコク --- */
+  {id:"ritz-bangkok",      name:"リッツ・カールトン・バンコク",       city:"バンコク",   pref:"タイ", lat:13.728714, lng:100.545288,brand:"ritz",        cat:"luxury"},
+  {id:"stregis-bangkok",   name:"セントレジス・バンコク",             city:"バンコク",   pref:"タイ", lat:13.739983, lng:100.539877,brand:"stregis",     cat:"luxury"},
+  {id:"athenee",           name:"アテネホテル バンコク",              city:"バンコク",   pref:"タイ", lat:13.741354, lng:100.547774,brand:"luxcol",      cat:"luxury"},
+  {id:"sheraton-sukhumvit",name:"シェラトン・グランデ・スクンビット", city:"バンコク",   pref:"タイ", lat:13.737467, lng:100.559106,brand:"luxcol",      cat:"luxury"},
+  {id:"w-bangkok",         name:"Wバンコク",                          city:"バンコク",   pref:"タイ", lat:13.722075, lng:100.528768,brand:"w",           cat:"luxury"},
+  {id:"jw-bangkok",        name:"JWマリオット・バンコク",             city:"バンコク",   pref:"タイ", lat:13.74168,  lng:100.55203, brand:"jw",          cat:"luxury"},
+  {id:"marquis",           name:"マリオット・マーキス クイーンズパーク", city:"バンコク", pref:"タイ", lat:13.730333, lng:100.565646,brand:"marriott",   cat:"premium"},
+  {id:"marriott-surawongse",name:"マリオット・スラウォンセ",          city:"バンコク",   pref:"タイ", lat:13.727346, lng:100.522306,brand:"marriott",    cat:"premium"},
+  {id:"marriott-sukhumvit",name:"マリオット・スクンビット",           city:"バンコク",   pref:"タイ", lat:13.72333,  lng:100.58048, brand:"marriott",    cat:"premium"},
+  {id:"royalorchid",       name:"ロイヤルオーキッド・シェラトン",     city:"バンコク",   pref:"タイ", lat:13.729265, lng:100.513758,brand:"sheraton",    cat:"premium"},
+  {id:"westin-sukhumvit",  name:"ウェスティン・グランデ・スクンビット", city:"バンコク", pref:"タイ", lat:13.738161, lng:100.559479,brand:"westin",      cat:"premium"},
+  {id:"ren-ratchaprasong", name:"ルネッサンス・ラチャプラソン",       city:"バンコク",   pref:"タイ", lat:13.74264,  lng:100.54179, brand:"renaissance", cat:"premium"},
+  {id:"lemeridien-bangkok",name:"ルメリディアン・バンコク",           city:"バンコク",   pref:"タイ", lat:13.730004, lng:100.530289,brand:"lemeridien",  cat:"premium"},
+  {id:"muse-bangkok",      name:"ホテル・ミューズ バンコク",          city:"バンコク",   pref:"タイ", lat:13.740206, lng:100.543351,brand:"autograph",   cat:"premium"},
+  {id:"madipaidi",         name:"マディ・パイディ バンコク",          city:"バンコク",   pref:"タイ", lat:13.726104, lng:100.577884,brand:"autograph",   cat:"premium"},
+  {id:"cy-bangkok",        name:"コートヤード・バンコク",             city:"バンコク",   pref:"タイ", lat:13.74103,  lng:100.54189, brand:"courtyard",   cat:"select"},
+  {id:"moxy-bangkok",      name:"モクシー・ラチャプラソン",           city:"バンコク",   pref:"タイ", lat:13.74797,  lng:100.54126, brand:"moxy",        cat:"select"},
+  {id:"aloft-bkk",         name:"アロフト・スクンビット11",           city:"バンコク",   pref:"タイ", lat:13.744575, lng:100.556552,brand:"aloft",       cat:"select"},
+  /* --- ホアヒン・パタヤ・ラヨーン --- */
+  {id:"marriott-huahin",   name:"ホアヒン・マリオット",               city:"ホアヒン",   pref:"タイ", lat:12.561089, lng:99.960717, brand:"marriott",    cat:"premium"},
+  {id:"sheraton-huahin",   name:"シェラトン・ホアヒン",               city:"ホアヒン",   pref:"タイ", lat:12.665611, lng:99.956354, brand:"sheraton",    cat:"premium"},
+  {id:"sheraton-pranburi", name:"シェラトン・プランブリー",           city:"ホアヒン",   pref:"タイ", lat:12.387351, lng:99.996121, brand:"sheraton",    cat:"premium"},
+  {id:"marriott-pattaya",  name:"パタヤ・マリオット",                 city:"パタヤ",     pref:"タイ", lat:12.868028, lng:100.892806,brand:"marriott",    cat:"premium"},
+  {id:"ren-pattaya",       name:"ルネッサンス・パタヤ",               city:"パタヤ",     pref:"タイ", lat:12.807784, lng:100.915987,brand:"renaissance", cat:"premium"},
+  {id:"cy-pattaya",        name:"コートヤード・ノースパタヤ",         city:"パタヤ",     pref:"タイ", lat:12.95232,  lng:100.88444, brand:"courtyard",   cat:"select"},
+  {id:"marriott-rayong",   name:"ラヨーン・マリオット",               city:"ラヨーン",   pref:"タイ", lat:12.62907,  lng:101.55491, brand:"marriott",    cat:"premium"},
+  /* --- サムイ島 --- */
+  {id:"ritz-samui",        name:"リッツ・カールトン・サムイ",         city:"サムイ島",   pref:"タイ", lat:9.57945,   lng:100.074611,brand:"ritz",        cat:"luxury"},
+  {id:"w-samui",           name:"Wコサムイ",                          city:"サムイ島",   pref:"タイ", lat:9.572229,  lng:100.016527,brand:"w",           cat:"luxury"},
+  {id:"vanabelle",         name:"ワナベル・サムイ",                   city:"サムイ島",   pref:"タイ", lat:9.507912,  lng:100.055439,brand:"luxcol",      cat:"luxury"},
+  {id:"sheraton-samui",    name:"シェラトン・サムイ",                 city:"サムイ島",   pref:"タイ", lat:9.503879,  lng:100.055602,brand:"sheraton",    cat:"premium"},
+  {id:"ren-samui",         name:"ルネッサンス・サムイ",               city:"サムイ島",   pref:"タイ", lat:9.469807,  lng:100.066475,brand:"renaissance", cat:"premium"},
+  /* --- チェンマイ・チェンライ --- */
+  {id:"marriott-chiangmai",name:"チェンマイ・マリオット",             city:"チェンマイ", pref:"タイ", lat:18.78417,  lng:98.999651, brand:"marriott",    cat:"premium"},
+  {id:"lemeridien-chiangrai",name:"ルメリディアン・チェンライ",       city:"チェンライ", pref:"タイ", lat:19.922842, lng:99.854007, brand:"lemeridien",  cat:"premium"},
 ];
 
 /* ブランド定義（公式区分。名称は表示用） */
@@ -174,6 +230,7 @@ const BRANDS = {
   autograph: {label:"オートグラフ",           cat:"premium"},
   lemeridien:{label:"ルメリディアン",         cat:"premium"},
   tribute:   {label:"トリビュート",           cat:"premium"},
+  designhotels:{label:"デザインホテルズ",     cat:"premium"},
   courtyard: {label:"コートヤード",           cat:"select"},
   fourpoints:{label:"フォーポイント",         cat:"select"},
   fairfield: {label:"フェアフィールド",       cat:"select"},
@@ -240,7 +297,7 @@ let curTab="rally";
 function render(){
   document.getElementById("edition").textContent=EDITION;
   document.getElementById("verNote").textContent=
-    `Bonvoyラリー v${APP_VERSION}（ベース版）。ホテルデータは未収録です。記録はこの端末に保存されます。`;
+    `Bonvoyラリー v${APP_VERSION}。タイの対象ブランド${HOTELS.length}軒を収録（${EDITION}）。記録はこの端末に保存されます。`;
   const n=Object.keys(state.stays).filter(id=>byId[id]).length;
   document.getElementById("total").innerHTML=`判子 ${n}<span style="font-size:10px">宿</span>`;
   document.getElementById("quests").innerHTML=
