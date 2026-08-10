@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FEF6E6">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<title>Bonvoyラリー</title>
+<style>
+  /* Sauna470s / サ道場と同じ手描き判子の世界観。アクセントだけ紺金のホテル調 */
+  :root{
+    --bg:#FEF6E6; --panel:#FFFFF8; --text:#4A3B2E; --mid:#6E5D4B; --muted:#A08C72;
+    --line:#E8DCC3; --line2:#D9CBA8; --stamp:#D9483B; --gold:#C7973F; --navy:#3A4A6B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--text);font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+    font-size:15px;line-height:1.6;padding-bottom:60px}
+  .wrap{max-width:520px;margin:0 auto;padding:0 18px}
+  header{padding:calc(24px + env(safe-area-inset-top)) 0 14px;border-bottom:2px dashed var(--line2)}
+  .hrow{display:flex;justify-content:space-between;align-items:baseline}
+  h1{font-size:19px;font-weight:800;letter-spacing:.25em;margin:0}
+  .edition{font-family:ui-monospace,monospace;font-size:9.5px;color:var(--muted);letter-spacing:.1em}
+  .sub{margin:8px 0 0;font-size:12px;color:var(--mid);line-height:1.7}
+  .actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+  button{font-family:inherit;cursor:pointer}
+  .btn{font-size:13px;font-weight:600;padding:11px 16px;border-radius:12px;border:1.5px solid var(--line2);
+    background:var(--panel);color:var(--text)}
+  .btn.primary{background:var(--navy);color:var(--bg);border-color:var(--navy);box-shadow:0 2px 0 rgba(74,59,46,.15)}
+  .btn:disabled{opacity:.4}
+  .total{font-family:ui-monospace,monospace;font-size:12px;color:var(--muted);white-space:nowrap}
+  .notice{margin-top:13px;padding:11px 13px;border:1.5px solid var(--line);border-left:3px solid #6F9A63;
+    background:var(--panel);font-size:12.5px;line-height:1.7;color:var(--mid);border-radius:10px}
+  .notice.err{border-left-color:var(--stamp)}
+  .tabs{display:flex;gap:8px;margin-top:14px}
+  .tab{flex:1;padding:9px;border-radius:999px;border:1.5px solid var(--line2);background:var(--panel);
+    font-size:13px;font-weight:700;color:var(--mid);letter-spacing:.1em}
+  .tab.on{background:var(--navy);border-color:var(--navy);color:var(--bg)}
+  .qcard{display:block;width:100%;text-align:left;background:var(--panel);border:1.5px solid var(--line);
+    border-radius:14px;padding:13px 14px;margin-top:12px;color:var(--text);box-shadow:0 1px 0 rgba(74,59,46,.05)}
+  .qcard.done{border-color:var(--gold);background:#FFFDF6}
+  .qhead{display:flex;align-items:center;gap:11px}
+  .qseal{width:40px;height:40px;border-radius:50%;border:2px solid var(--navy);color:var(--navy);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;
+    font-family:'Hiragino Mincho ProN','Yu Mincho',serif;transform:rotate(-6deg)}
+  .qcard.done .qseal{border-color:var(--gold);color:var(--gold);background:rgba(199,151,63,.08)}
+  .qbody{flex:1;min-width:0}
+  .qname{font-size:14.5px;font-weight:700}
+  .qdesc{font-size:11px;color:var(--muted);margin-top:1px}
+  .qnum{font-family:ui-monospace,monospace;font-size:13px;color:var(--mid);flex-shrink:0;text-align:right}
+  .qnum small{font-size:10px;color:var(--muted)}
+  .bar{height:5px;background:#F2E6CC;margin-top:10px;border-radius:3px;overflow:hidden}
+  .bar>div{height:100%;border-radius:3px;background:var(--navy);transition:width .3s}
+  .qcard.done .bar>div{background:var(--gold)}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.18em;color:var(--muted)}
+  .settext{font-size:12px;color:var(--mid);line-height:1.85;margin:8px 0 0}
+  .sect{border-top:1.5px dashed var(--line2);margin-top:26px;padding-top:18px}
+  input[type=range]{width:100%;accent-color:var(--navy)}
+  .overlay{position:fixed;inset:0;background:rgba(74,59,46,.38);display:none;align-items:flex-end;justify-content:center;z-index:50}
+  .overlay.on{display:flex}
+  .sheet{background:var(--panel);width:100%;max-width:520px;max-height:88vh;overflow-y:auto;overscroll-behavior:contain;
+    padding:20px 18px calc(28px + env(safe-area-inset-bottom));border-radius:20px 20px 0 0;
+    box-shadow:0 -6px 24px rgba(74,59,46,.18)}
+  .shead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .xbtn{background:none;border:none;color:var(--muted);font-size:20px;line-height:1}
+  .frow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;
+    user-select:none;-webkit-user-select:none;touch-action:pan-y;
+    border-bottom:1.5px dashed var(--line);padding:10px 2px;color:var(--text)}
+  .frow .dot{width:11px;height:11px;border-radius:6px;border:1.5px solid var(--muted);flex-shrink:0}
+  .frow .hanko{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--stamp);color:var(--stamp);
+    background:rgba(217,72,59,.08);display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;flex-shrink:0;transform:rotate(-8deg);font-family:'Hiragino Mincho ProN','Yu Mincho',serif}
+  .frow .nm{flex:1;min-width:0;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .frow .ct{font-family:ui-monospace,monospace;font-size:10px;color:var(--muted);flex-shrink:0}
+  .badge{display:inline-block;font-size:10px;font-weight:700;color:var(--mid);border:1px solid var(--line2);
+    border-radius:6px;padding:1px 6px;margin-right:4px;vertical-align:1px}
+  .wantstar{color:var(--gold);font-size:12px;margin-left:4px}
+  .fbtnrow{display:flex;gap:8px;margin-top:12px}
+  .fbtnrow .btn{flex:1;padding:11px 4px;font-size:12.5px}
+  .backbtn{font-size:12px;color:var(--navy);background:none;border:none;font-weight:700;padding:4px 0}
+  .bgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 8px}
+  .bcell{background:none;border:none;padding:0;text-align:center;font-family:inherit;color:var(--text);min-width:0}
+  .bcell svg{width:100%;height:auto;display:block}
+  .bnm{display:block;font-size:8.5px;color:var(--mid);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bnm.off{color:#C9B58F}
+  .mono{font-family:ui-monospace,monospace}
+  .choosebtn{display:flex;justify-content:space-between;width:100%;background:var(--panel);border:1.5px solid var(--line2);
+    border-radius:12px;padding:13px 14px;margin-bottom:9px;font-size:14px;color:var(--text)}
+  .choosebtn .d{color:var(--muted);font-size:11px}
+  #stampfx{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;
+    pointer-events:none;z-index:99}
+  #stampfx.on{display:flex}
+  #stampfx .seal{animation:stampin .5s cubic-bezier(.2,1.6,.4,1)}
+  #stampfx.bye .seal,#stampfx.bye .fxname{animation:stampout .5s forwards}
+  .fxname{margin-top:10px;background:var(--panel);border:1.5px solid var(--line2);border-radius:999px;
+    padding:6px 16px;font-size:12.5px;font-weight:700;box-shadow:0 2px 8px rgba(74,59,46,.15)}
+  @keyframes stampin{0%{transform:scale(2.4);opacity:0}55%{transform:scale(0.94);opacity:1}100%{transform:scale(1)}}
+  @keyframes stampout{to{opacity:0;transform:scale(0.96)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hrow"><h1>Bonvoyラリー</h1><span class="edition" id="edition"></span></div>
+    <p class="sub"><b>マリオット ボンヴォイのホテルを泊まり歩く</b>スタンプ帳。泊まった宿に判子を押して、ブランドを集める。</p>
+  </header>
+
+  <div class="actions">
+    <button class="btn primary" id="stampBtn" style="flex:1">現在地でチェックイン</button>
+    <span class="total" id="total"></span>
+  </div>
+  <div id="notice" style="display:none"></div>
+
+  <div class="tabs">
+    <button class="tab on" data-v="rally">ラリー</button>
+    <button class="tab" data-v="book">判子帳</button>
+  </div>
+
+  <div id="rallyView">
+    <div id="quests"></div>
+    <div class="sect">
+      <div class="eyebrow" id="radlabel"></div>
+      <input type="range" min="200" max="2000" step="100" id="radius">
+    </div>
+    <div class="sect">
+      <div class="eyebrow">この帳について</div>
+      <p class="settext" id="verNote"></p>
+    </div>
+  </div>
+
+  <div id="bookView" style="display:none"></div>
+</div>
+
+<div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
+<div id="stampfx"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="sealtex" x="-15%" y="-15%" width="130%" height="130%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.11" numOctaves="3" seed="7"/>
+    <feDisplacementMap in="SourceGraphic" scale="2.6"/>
+  </filter>
+</defs></svg>
+
+<script>
+"use strict";
+const APP_VERSION = "0.1.0";
+const EDITION = "準備中";   /* ホテルデータを収録した日付を入れる */
+
+/* ---------- ホテルデータ ----------
+   実データ主義：実在のホテルだけを入れる（名称・都市・座標は公式/実測のみ。捏造禁止）。
+   1行 = {id, name, city, pref, lat, lng, brand, cat}
+     brand: BRANDS のキー
+     cat  : luxury / premium / select / longstay（Bonvoyの公式区分に準拠）
+   ★ここはまだ空。どの範囲を集めるか（日本全店/泊まった店だけ/都市圏…）を決めてから投入する */
+const HOTELS = [
+];
+
+/* ブランド定義（公式区分。名称は表示用） */
+const BRANDS = {
+  ritz:      {label:"ザ・リッツ・カールトン", cat:"luxury"},
+  stregis:   {label:"セントレジス",           cat:"luxury"},
+  edition:   {label:"エディション",           cat:"luxury"},
+  luxcol:    {label:"ラグジュアリーコレクション", cat:"luxury"},
+  w:         {label:"Wホテル",                cat:"luxury"},
+  jw:        {label:"JWマリオット",           cat:"luxury"},
+  marriott:  {label:"マリオット",             cat:"premium"},
+  sheraton:  {label:"シェラトン",             cat:"premium"},
+  westin:    {label:"ウェスティン",           cat:"premium"},
+  renaissance:{label:"ルネッサンス",          cat:"premium"},
+  autograph: {label:"オートグラフ",           cat:"premium"},
+  mercan:    {label:"メリディアン",           cat:"premium"},
+  courtyard: {label:"コートヤード",           cat:"select"},
+  fourpoints:{label:"フォーポイント",         cat:"select"},
+  fairfield: {label:"フェアフィールド",       cat:"select"},
+  acihotels: {label:"ACホテル",               cat:"select"},
+  aloft:     {label:"アロフト",               cat:"select"},
+  moxy:      {label:"モクシー",               cat:"select"},
+  residence: {label:"レジデンス・イン",       cat:"longstay"},
+};
+const CAT_LABEL={luxury:"ラグジュアリー",premium:"プレミアム",select:"セレクト",longstay:"長期滞在"};
+
+let byId={};
+function reindex(){ byId=Object.fromEntries(HOTELS.map(h=>[h.id,h])); }
+const rad=d=>d*Math.PI/180;
+function distance(a,b){
+  const R=6371000, dLat=rad(b.lat-a.lat), dLng=rad(b.lng-a.lng);
+  const x=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(x));
+}
+const today=()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+
+/* ---------- ラリー（お題）。HOTELS から動的に組む ---------- */
+const QUESTS=[
+  {id:"first", seal:"泊", name:"はじめての一泊", desc:"どこか1軒に泊まる", goal:"count", need:1, test:h=>true},
+  {id:"lux",   seal:"贅", name:"ラグジュアリー巡り", desc:"ラグジュアリー区分に泊まる", goal:"all", test:h=>(BRANDS[h.brand]||{}).cat==="luxury"},
+  {id:"brands",seal:"紋", name:"ブランド集め", desc:"泊まったブランドの数", goal:"brands"},
+  {id:"all",   seal:"制", name:"全店制覇", desc:"収録ホテルをすべて踏破", goal:"all", test:h=>true},
+];
+QUESTS.forEach(q=>q.targets=(q.test?HOTELS.filter(q.test):HOTELS).map(h=>h.id));
+
+/* ---------- 状態 ---------- */
+const KEY="bonvoy:v1";
+let state={stays:{}, wants:{}, radius:800};
+try{ const raw=localStorage.getItem(KEY); if(raw) state=Object.assign(state,JSON.parse(raw)); }catch(e){}
+if(!state.wants) state.wants={};
+reindex();
+const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } };
+const stamped=id=>!!state.stays[id];
+
+function progress(q){
+  const done=q.targets.filter(stamped);
+  if(q.goal==="brands"){
+    const got=new Set(done.map(id=>byId[id].brand)).size;
+    const t=new Set(HOTELS.map(h=>h.brand)).size;
+    return {n:got, t:t||1, full:t>0&&got===t, doneIds:done};
+  }
+  if(q.goal==="count") return {n:done.length, t:q.need, full:done.length>=q.need, doneIds:done};
+  return {n:done.length, t:q.targets.length, full:q.targets.length>0&&done.length===q.targets.length, doneIds:done};
+}
+
+/* ---------- 描画 ---------- */
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let curTab="rally";
+function render(){
+  document.getElementById("edition").textContent=EDITION;
+  document.getElementById("verNote").textContent=
+    `Bonvoyラリー v${APP_VERSION}（ベース版）。ホテルデータは未収録です。記録はこの端末に保存されます。`;
+  const n=Object.keys(state.stays).filter(id=>byId[id]).length;
+  document.getElementById("total").innerHTML=`判子 ${n}<span style="font-size:10px">宿</span>`;
+  document.getElementById("quests").innerHTML=
+    (HOTELS.length?"":`<div class="notice" style="margin-top:16px">ホテルデータがまだ入っていません。収録範囲を決めて実データで投入してください（bonvoy/index.html の HOTELS）。</div>`)
+    +QUESTS.map(q=>{
+      const p=progress(q), pct=p.t?Math.min(100,p.n/p.t*100):0;
+      return `<button class="qcard${p.full?" done":""}" data-q="${q.id}">
+        <div class="qhead">
+          <span class="qseal">${q.seal}</span>
+          <span class="qbody">
+            <div class="qname">${esc(q.name)}${p.full?' <span style="font-size:10px;color:var(--gold);font-weight:700">満願</span>':""}</div>
+            <div class="qdesc">${esc(q.desc)}</div>
+          </span>
+          <span class="qnum">${p.n}<small>/${p.t}</small></span>
+        </div>
+        <div class="bar"><div style="width:${pct.toFixed(1)}%"></div></div>
+      </button>`;
+    }).join("");
+  document.querySelectorAll(".qcard").forEach(b=>b.addEventListener("click",()=>openQuest(b.dataset.q)));
+  if(curTab==="book") renderBook();
+}
+
+/* ---------- シート ---------- */
+const overlay=document.getElementById("overlay"), sheetEl=document.getElementById("sheet");
+const openSheet=h=>{ sheetEl.innerHTML=h; overlay.classList.add("on"); sheetEl.scrollTop=0; document.body.style.overflow="hidden"; };
+const closeSheet=()=>{ overlay.classList.remove("on"); document.body.style.overflow=""; };
+overlay.addEventListener("click",e=>{ if(e.target===overlay) closeSheet(); });
+window.__close=closeSheet;
+const sheetHead=t=>`<div class="shead"><span class="eyebrow">${esc(t)}</span><button class="xbtn" onclick="window.__close()">×</button></div>`;
+
+function openQuest(qid){
+  const q=QUESTS.find(x=>x.id===qid), p=progress(q);
+  const rows=q.targets.map(id=>byId[id])
+    .sort((a,b)=>(stamped(b.id)?1:0)-(stamped(a.id)?1:0))
+    .map(h=>`<button class="frow" onclick="window.__hotel('${h.id}','${q.id}')">
+      ${stamped(h.id)?`<span class="hanko">${q.seal}</span>`:`<span class="dot"></span>`}
+      <span class="nm">${esc(h.name)}${state.wants[h.id]?'<span class="wantstar">★</span>':""}</span>
+      <span class="ct">${esc(h.city||"")}</span>
+    </button>`).join("");
+  openSheet(sheetHead(q.name)+`
+    <p style="font-size:12.5px;color:var(--mid);line-height:1.8;margin:0 0 8px">${esc(q.desc)}。進捗 <b class="mono">${p.n}/${p.t}</b>${p.full?'・<b style="color:var(--gold)">満願</b>':""}</p>
+    <div>${rows||'<p class="settext">対象のホテルがまだありません。</p>'}</div>`);
+}
+
+/* ---------- ホテルカード ---------- */
+window.__hotel=(hid,backQid)=>openHotel(hid,backQid);
+function openHotel(hid,backQid){
+  const h=byId[hid]; if(!h) return;
+  const on=stamped(hid), want=!!state.wants[hid];
+  const br=BRANDS[h.brand];
+  const back=backQid?`<button class="backbtn" onclick="window.__quest('${backQid}')">‹ ${esc(QUESTS.find(q=>q.id===backQid).name)}</button>`:"";
+  openSheet(`<div class="shead">${back||'<span class="eyebrow">ホテルカード</span>'}<button class="xbtn" onclick="window.__close()">×</button></div>
+    <div style="display:flex;align-items:flex-start;gap:11px">
+      ${on?`<span style="width:48px;flex-shrink:0">${hotelSeal(h,{size:48})}</span>`:`<span style="width:48px;flex-shrink:0;opacity:0.55">${hotelSeal(h,{hidden:true,size:48})}</span>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:16.5px;font-weight:800;line-height:1.4">${esc(h.name)}${want?'<span class="wantstar">★</span>':""}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(h.pref||"")}${esc(h.city?"・"+h.city:"")}</div>
+      </div>
+    </div>
+    <div style="margin-top:9px">${br?`<span class="badge">${esc(br.label)}</span><span class="badge" style="color:var(--gold);border-color:var(--gold)">${esc(CAT_LABEL[br.cat]||"")}</span>`:""}</div>
+    <p style="font-size:11.5px;color:var(--mid);margin:10px 0 0">${on?`<b style="color:var(--stamp)">宿泊済み</b>　<span class="mono">${esc(state.stays[hid])}</span>`:"未踏"}</p>
+    <div class="fbtnrow">
+      ${on?`<button class="btn" onclick="window.__stamp('${hid}','${backQid||""}')">判子を取り消す</button>`
+          :`<button class="btn primary" onclick="window.__stamp('${hid}','${backQid||""}')">泊まった（手動で押す）</button>`}
+      <button class="btn" style="${want?"border-color:var(--gold);color:var(--gold)":""}" onclick="window.__want('${hid}','${backQid||""}')">${want?"★ 泊まりたい済":"☆ 泊まりたい"}</button>
+    </div>
+    <div class="fbtnrow">
+      <button class="btn" onclick="window.open('https://www.google.com/maps?q=${h.lat},${h.lng}','_blank')">Googleマップで開く</button>
+    </div>`);
+}
+window.__quest=qid=>openQuest(qid);
+window.__stamp=(hid,backQid)=>{
+  const h=byId[hid];
+  if(stamped(hid)){
+    if(!confirm(`${h.name} の判子を取り消しますか？`)) return;
+    delete state.stays[hid]; save(); render(); openHotel(hid,backQid||undefined);
+  }else{
+    state.stays[hid]=today(); save(); render(); openHotel(hid,backQid||undefined); stampFx(h);
+  }
+};
+window.__want=(hid,backQid)=>{
+  if(state.wants[hid]) delete state.wants[hid]; else state.wants[hid]=today();
+  save(); render(); openHotel(hid,backQid||undefined);
+};
+
+/* ---------- ホテル判子（自動生成。サ道場の facSeal と同系） ----------
+   形=区分（六角=luxury / 丸=premium / 角=select / 五角=longstay）、中央=頭文字、肩=都市。
+   モチーフ（王冠など）は本番データを入れる段で決める */
+const sealHash=s=>{ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))>>>0; return h; };
+function hotelSeal(h,o={}){
+  const ink=o.ink||"#D9483B";
+  const cat=(BRANDS[h.brand]||{}).cat||"premium";
+  const hsh=sealHash(h.id), rot=(hsh%9)-4;
+  const attr=o.size?`width="${o.size}" height="${o.size}"`:"";
+  let frame;
+  if(cat==="luxury")
+    frame=`<polygon points="0,-37 32,-18.5 32,18.5 0,37 -32,18.5 -32,-18.5" fill="none" stroke="${ink}" stroke-width="4.5"/><polygon points="0,-30 26,-15 26,15 0,30 -26,15 -26,-15" fill="none" stroke="${ink}" stroke-width="1.3"/>`;
+  else if(cat==="select")
+    frame=`<rect x="-34" y="-34" width="68" height="68" rx="6" fill="none" stroke="${ink}" stroke-width="4.5"/><rect x="-28" y="-28" width="56" height="56" fill="none" stroke="${ink}" stroke-width="1.3"/>`;
+  else if(cat==="longstay")
+    frame=`<polygon points="0,-38 36,-10 23,36 -23,36 -36,-10" fill="none" stroke="${ink}" stroke-width="4.5"/><polygon points="0,-31 29,-8 18.5,29 -18.5,29 -29,-8" fill="none" stroke="${ink}" stroke-width="1.3"/>`;
+  else
+    frame=`<circle r="36" fill="none" stroke="${ink}" stroke-width="4.5"/><circle r="30" fill="none" stroke="${ink}" stroke-width="1.3"/>`;
+  if(o.hidden)
+    return `<svg viewBox="-45 -45 90 90" ${attr}><g opacity="0.4">${frame.replaceAll(ink,"#C9B58F")}<text y="10" text-anchor="middle" font-size="26" fill="#C9B58F" font-family="'Hiragino Mincho ProN','Yu Mincho',serif">？</text></g></svg>`;
+  const ch=(h.name||"").replace(/[ 　]/g,"")[0]||"泊";
+  const city=h.city?`<text y="-16" text-anchor="middle" font-size="${h.city.length>5?5.4:6.8}" letter-spacing="0.8" fill="${ink}">${esc(h.city)}</text>`:"";
+  const body=`<g transform="rotate(${rot})">${frame}${city}
+    <text y="12" text-anchor="middle" font-size="34" font-weight="800" fill="${ink}" font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${esc(ch)}</text></g>`;
+  if(o.bodyOnly) return body;
+  return `<svg viewBox="-45 -45 90 90" ${attr}><g filter="url(#sealtex)" opacity="0.9">${body}</g></svg>`;
+}
+
+/* ---------- 判子帳 ---------- */
+function renderBook(){
+  const el=document.getElementById("bookView");
+  if(!HOTELS.length){ el.innerHTML=`<div class="notice" style="margin-top:16px">ホテルデータが入ると、ここに判子が並びます。</div>`; return; }
+  const cats=["luxury","premium","select","longstay"];
+  el.innerHTML=cats.map(c=>{
+    const hs=HOTELS.filter(h=>(BRANDS[h.brand]||{}).cat===c);
+    if(!hs.length) return "";
+    const n=hs.filter(h=>stamped(h.id)).length;
+    return `<div class="eyebrow" style="margin:18px 2px 9px">${CAT_LABEL[c]}　${n}<span style="letter-spacing:0">/${hs.length}</span></div>
+      <div class="bgrid">`+hs.map(h=>`<button class="bcell" onclick="window.__hotel('${h.id}')">${hotelSeal(h,{hidden:!stamped(h.id)})}<span class="bnm${stamped(h.id)?"":" off"}">${esc(h.name)}</span></button>`).join("")+`</div>`;
+  }).join("");
+}
+
+/* ---------- タブ ---------- */
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
+  curTab=b.dataset.v;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
+  document.getElementById("rallyView").style.display = curTab==="rally" ? "" : "none";
+  document.getElementById("bookView").style.display = curTab==="book" ? "" : "none";
+  if(curTab==="book") renderBook();
+}));
+
+/* ---------- 判子演出 ---------- */
+let fxT1,fxT2;
+function stampFx(h){
+  const el=document.getElementById("stampfx");
+  el.innerHTML=`<div class="seal">${hotelSeal(h,{size:150})}</div>
+    <div class="fxname">${esc(h.name)}　${esc(today())}</div>`;
+  el.classList.remove("bye"); el.classList.add("on");
+  clearTimeout(fxT1); clearTimeout(fxT2);
+  fxT1=setTimeout(()=>el.classList.add("bye"),1400);
+  fxT2=setTimeout(()=>el.classList.remove("on","bye"),1900);
+}
+
+/* ---------- GPSチェックイン ---------- */
+document.getElementById("stampBtn").addEventListener("click",()=>{
+  const btn=document.getElementById("stampBtn");
+  if(!HOTELS.length){ notify("ホテルデータがまだ入っていません。","err"); return; }
+  btn.disabled=true; btn.textContent="測位中…";
+  navigator.geolocation.getCurrentPosition(pos=>{
+    btn.disabled=false; btn.textContent="現在地でチェックイン";
+    const p={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    const near=HOTELS.map(h=>({h,d:distance(p,h)})).filter(x=>x.d<=state.radius).sort((a,b)=>a.d-b.d);
+    if(!near.length){
+      const alls=HOTELS.map(h=>({h,d:distance(p,h)})).sort((a,b)=>a.d-b.d)[0];
+      notify(alls?`半径${state.radius}m以内に収録ホテルなし。最寄りは ${alls.h.name}（約${Math.round(alls.d)}m）。`:"収録ホテルがありません。","err");
+    }else if(near.length===1){ gpsStamp(near[0].h); }
+    else openSheet(sheetHead("どのホテルにいますか？")+near.map(x=>
+      `<button class="choosebtn" onclick="window.__gps('${x.h.id}')"><span>${esc(x.h.name)}</span><span class="d">${Math.round(x.d)}m</span></button>`).join(""));
+  },err=>{ btn.disabled=false; btn.textContent="現在地でチェックイン"; notify("現在地を取得できませんでした。","err"); },
+  {enableHighAccuracy:true,timeout:12000,maximumAge:30000});
+});
+function gpsStamp(h){ if(stamped(h.id)){ notify(`${h.name} は判子済みです`); return; } state.stays[h.id]=today(); save(); render(); stampFx(h); }
+window.__gps=id=>{ closeSheet(); gpsStamp(byId[id]); };
+
+/* ---------- 通知・設定 ---------- */
+let ntfT;
+function notify(msg,kind){
+  const el=document.getElementById("notice");
+  el.className="notice"+(kind==="err"?" err":""); el.textContent=msg; el.style.display="block";
+  clearTimeout(ntfT); ntfT=setTimeout(()=>el.style.display="none",5000);
+}
+const radEl=document.getElementById("radius");
+radEl.value=state.radius;
+const radLabel=()=>document.getElementById("radlabel").textContent=`GPS判定半径 — ${state.radius}m（ホテルは敷地が広いので広め）`;
+radLabel();
+radEl.addEventListener("input",()=>{ state.radius=+radEl.value; radLabel(); save(); });
+
+render();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v="+APP_VERSION).catch(()=>{});
+</script>
+</body>
+</html>
