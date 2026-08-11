@@ -18,6 +18,8 @@
 - デザイン統合フロー: チャッピーの納品PR → ココが本体へ統合 → 390px確認 → PR → Shun承認でマージ
 - **3者の会話はGitHubのIssue/PRコメントで行う**（リアルタイム同席は不可。Issueが会議室）。デザイン議論のホーム: Issue #4「デザインキックオフ」
 - 現在のデザイン到達点: `design/mock-sugoroku.html`（双六ステータスロードのモック）
+- Git運用: `work` を共同統合ブランチとし、各エージェントの作業ブランチから `work` 向けPRを作る。`main` はShun承認後のリリース専用
+- ココは通常の編集・検証・commit・push・`work` 向けPR作成を自律的に進める。Shunへの確認はスコープ変更、テイストの最終判断、課金、データ削除、`main` へのmergeに限る
 
 ## コンセプト
 
@@ -53,4 +55,4 @@
 3. リリース時は `APP_VERSION` を上げる（sw.jsは自動追従、手で触らない）
 4. スマホ幅390pxで確認する（Playwright chromium は PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers）
 5. ホテルデータの捏造禁止（実データ主義）
-6. GitHub操作：gh CLI不可。git pushは可、PR作成/マージはGitHub MCPツールで
+6. GitHub操作：ローカルの `git` と `gh` を使用可。制限環境内の `gh auth status` だけで未認証と断定せず、承認付き実行またはフルアクセスでMacのキーチェーン認証を使う
