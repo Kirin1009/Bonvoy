@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "image": {
+    "src": "assets/world/base-atlas-unbuilt.webp",
+    "width": 852,
+    "height": 1842,
+    "coordinateSystem": "image-px-origin-top-left"
+  },
+  "squares": [
+    { "n": 1, "x": 427, "y": 1590 },
+    { "n": 2, "x": 425, "y": 1453 },
+    { "n": 3, "x": 370, "y": 1327 },
+    { "n": 4, "x": 412, "y": 1205 },
+    { "n": 5, "x": 450, "y": 1088 },
+    { "n": 6, "x": 448, "y": 974 },
+    { "n": 7, "x": 421, "y": 860 },
+    { "n": 8, "x": 421, "y": 751 },
+    { "n": 9, "x": 441, "y": 661 },
+    { "n": 10, "x": 446, "y": 585 },
+    { "n": 11, "x": 419, "y": 525 },
+    { "n": 12, "x": 438, "y": 470 }
+  ],
+  "lots": [
+    {
+      "id": "jw-phuket",
+      "x": 126,
+      "y": 1108,
+      "scale": 0.43,
+      "asset": "assets/world/hotel-jw-phuket.webp"
+    },
+    {
+      "id": "w-osaka",
+      "x": 704,
+      "y": 798,
+      "scale": 0.31,
+      "asset": "assets/world/hotel-w-osaka.webp"
+    },
+    {
+      "id": "courtyard-nagoya",
+      "x": 108,
+      "y": 752,
+      "scale": 0.29,
+      "asset": "assets/world/hotel-courtyard-nagoya.webp"
+    },
+    {
+      "id": "izu-marriott-shuzenji",
+      "x": 423,
+      "y": 380,
+      "scale": 0.27,
+      "asset": "assets/world/hotel-izu-marriott.webp"
+    },
+    {
+      "id": "moxy-osaka-honmachi",
+      "x": 668,
+      "y": 466,
+      "scale": 0.24,
+      "asset": "assets/world/hotel-moxy-osaka.webp"
+    }
+  ],
+  "pawns": [
+    {
+      "id": "shun-m3-touring",
+      "asset": "assets/world/pawn-shun-m3.webp",
+      "defaultSquare": 8,
+      "scale": 0.2
+    },
+    {
+      "id": "sayano-220-coupe",
+      "asset": "assets/world/pawn-sayano-220.webp",
+      "defaultSquare": 8,
+      "scale": 0.18
+    }
+  ]
+}
