@@ -1,0 +1,353 @@
+<title>Bonvoyラリー 双六ロード モック v3（インタラクティブ）</title>
+<style>
+  /* 温黒の夜のリゾートに、クリーム大理石の双六ロード。紺×真鍮×判子朱 */
+  :root{
+    --bg:#141210; --panel:#1E1B17; --ground:#0C0B09;
+    --text:#F0E8DB; --mid:#C4B8A6; --muted:#8D8172; --line:#353028; --line2:#4A4236;
+    --acc:#F08A2E; --accdeep:#C96A1F; --stamp:#D9483B; --gold:#D4AF6E; --golddeep:#9C7B40;
+    --marble:#EFE6D2; --marble2:#E2D5B8; --navy:#2C3A57;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--ground)}
+  body{font-family:ui-rounded,"Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;color:var(--text);
+    font-size:15px;line-height:1.6;padding:26px 10px 60px;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .mocknote{font-size:11px;color:#A6906C;letter-spacing:.1em;text-align:center;max-width:390px}
+  .mocknote b{color:#D9BE8C}
+  .phone{width:100%;max-width:390px;background:var(--bg);border:1px solid #3A332A;border-radius:26px;
+    box-shadow:0 12px 34px rgba(0,0,0,.55);overflow:hidden}
+  .inner{padding:18px 16px 22px}
+  .screenlabel{font-size:10px;letter-spacing:.25em;color:#A6906C;text-align:center;margin-top:4px}
+
+  header .hrow{display:flex;justify-content:space-between;align-items:baseline}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:18px;font-weight:600;letter-spacing:.3em;color:var(--gold)}
+  .edition{font-family:ui-monospace,monospace;font-size:9px;color:var(--muted);letter-spacing:.08em}
+
+  /* HUD: 泊数＋ティアのセグメントバー */
+  .hud{margin-top:12px;display:flex;align-items:center;gap:12px}
+  .hud .n{font-size:26px;font-weight:800;font-family:ui-monospace,monospace;color:var(--acc);line-height:1}
+  .hud .n small{font-size:11px;color:var(--mid);font-weight:700}
+  .hud .sub{font-size:10.5px;color:var(--mid);line-height:1.45}
+  .hud .sub b{color:var(--acc)}
+  .segwrap{margin-top:9px}
+  .segbar{display:flex;gap:3px}
+  .seg{position:relative;height:9px;background:#2C271F;border-radius:5px;overflow:hidden}
+  .seg>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--golddeep),var(--gold));border-radius:5px}
+  .seg.s1{flex:10}.seg.s2{flex:15}.seg.s3{flex:25}.seg.s4{flex:25}.seg.s5{flex:25}
+  .seglbl{display:flex;gap:3px;margin-top:4px;font-size:9px;font-family:ui-monospace,monospace;color:var(--muted)}
+  .seglbl span{text-align:right}
+  .seglbl .l1{flex:10}.seglbl .l2{flex:15}.seglbl .l3{flex:25}.seglbl .l4{flex:25}.seglbl .l5{flex:25}
+  .seglbl .done{color:var(--gold);font-weight:700}
+
+  /* ===== 双六ステージ（パース付き盤面） ===== */
+  .stage{position:relative;height:474px;margin:14px -16px 0;overflow:hidden;
+    perspective:850px;perspective-origin:50% 26%;
+    background:
+      radial-gradient(120% 60% at 50% -6%, #2A2418 0%, transparent 60%),
+      linear-gradient(180deg,#171310 0%,#12100D 55%,#0E0C0A 100%)}
+  .plane{position:absolute;left:50%;bottom:0;width:336px;height:0;
+    transform-style:preserve-3d;
+    transform:translateX(-50%) rotateX(55deg) translateY(var(--cam,0px));
+    transition:transform .9s cubic-bezier(.3,.9,.3,1)}
+  .tile{position:absolute;width:100px;height:100px;border-radius:14px;
+    background:linear-gradient(160deg,var(--marble),var(--marble2));
+    border:1px solid #CBBA96;box-shadow:0 3px 0 #B7A382, inset 0 0 0 5px rgba(255,255,255,.35)}
+  .tile .no{position:absolute;top:6px;left:9px;font-size:10px;color:#9F8D6C;font-family:ui-monospace,monospace;font-weight:700}
+  .tile .dt{position:absolute;bottom:5px;right:8px;font-size:9px;color:#9F8D6C;font-family:ui-monospace,monospace}
+  .tile .seal{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  .tile .seal svg{width:74px;height:74px}
+  .tile .icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-size:30px;filter:sepia(1) saturate(.55) brightness(.85);opacity:.8}
+  .tile.navyt{background:linear-gradient(160deg,#33415E,#28344C);border-color:#1E2839;
+    box-shadow:0 3px 0 #1A2334, inset 0 0 0 5px rgba(255,255,255,.07)}
+  .tile.navyt .no{color:#8FA0C2}
+  .tile.navyt .icon{filter:none;opacity:.95}
+  .tile.gatecell{background:linear-gradient(160deg,#F3E7C8,#E6D4A8);border-color:#C4A86A;
+    box-shadow:0 3px 0 #A98D55, inset 0 0 0 5px rgba(255,255,255,.4)}
+  .tile.next{outline:2px dashed rgba(240,138,46,.7);outline-offset:-6px}
+  .tile{transition:background 1s,border-color 1s,box-shadow 1s}
+  .tile.silver{background:linear-gradient(160deg,#EAECF1,#C7CCD8);border-color:#A6ADBD;
+    box-shadow:0 3px 0 #8E96A8, inset 0 0 0 5px rgba(255,255,255,.55)}
+  .tile.silver .no,.tile.silver .dt{color:#7C8496}
+
+  /* 立ち上がる系（ゲート・駒・看板）: 盤面に垂直に立てる */
+  .stand{position:absolute;transform:rotateX(-55deg);transform-origin:50% 100%}
+  .gate3d{width:150px;left:-25px;display:flex;flex-direction:column;align-items:center}
+  .gate3d .arch{width:150px;height:96px;position:relative}
+  .gate3d .pillar{position:absolute;bottom:0;width:16px;height:74px;border-radius:5px 5px 0 0;
+    background:linear-gradient(180deg,#F2E6C6,#C8B183);box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}
+  .gate3d .pillar.pl{left:6px}.gate3d .pillar.pr{right:6px}
+  .gate3d .beam{position:absolute;top:0;left:0;right:0;height:36px;border-radius:18px;
+    background:linear-gradient(170deg,#33415E,#232E45);border:2px solid var(--gold);
+    display:flex;align-items:center;justify-content:center;gap:6px}
+  .gate3d .beam .cr{font-family:"Hiragino Mincho ProN",serif;font-size:16px;color:var(--gold)}
+  .gate3d .beam .tx{font-size:10px;font-weight:800;color:#EAD9AE;letter-spacing:.15em}
+  .gate3d .lamp{position:absolute;top:40px;width:10px;height:10px;border-radius:50%;
+    background:radial-gradient(circle,#FFE9B0,#F08A2E);box-shadow:0 0 10px rgba(240,160,60,.8)}
+  .gate3d .lamp.ll{left:9px}.gate3d .lamp.lr{right:9px}
+  .gate3d.celebrate .beam{box-shadow:0 0 22px rgba(212,175,110,.75)}
+
+  .pawn3d{width:34px;display:flex;flex-direction:column;align-items:center;z-index:5;
+    transition:left .55s cubic-bezier(.4,1.4,.5,1), top .55s cubic-bezier(.4,1.4,.5,1)}
+  .pawn3d .head{width:30px;height:30px;border-radius:50% 50% 50% 6px;transform:rotate(-8deg);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;
+    box-shadow:0 3px 8px rgba(0,0,0,.5)}
+  .pawn3d .base{width:16px;height:5px;border-radius:50%;background:rgba(0,0,0,.4);margin-top:2px}
+  .pawn3d.me .head{background:linear-gradient(160deg,var(--acc),var(--accdeep));color:#1A1206}
+  .pawn3d.wife .head{background:linear-gradient(160deg,#E7CD96,var(--gold));color:#2A2008}
+  .pawn3d.hop .head{animation:hop .55s}
+  @keyframes hop{40%{transform:rotate(-8deg) translateY(-22px)}100%{transform:rotate(-8deg)}}
+
+  .fog{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,#0E0C0A 0%,rgba(14,12,10,.55) 14%,transparent 38%)}
+  .stagehud{position:absolute;left:0;right:0;bottom:0;padding:10px 16px 12px;display:flex;gap:9px;align-items:center;
+    background:linear-gradient(180deg,transparent,rgba(10,9,7,.88) 45%)}
+  .stampbtn{flex:1;text-align:center;font-size:15px;font-weight:800;letter-spacing:.1em;padding:13px 0;
+    border-radius:999px;border:none;cursor:pointer;color:#1A1206;
+    background:linear-gradient(160deg,var(--acc),var(--accdeep));box-shadow:0 4px 0 #8A4A12}
+  .stampbtn:active{transform:translateY(2px);box-shadow:0 2px 0 #8A4A12}
+  .stampbtn:disabled{opacity:.55}
+  .maptgl{width:46px;padding:11px 0;text-align:center;border-radius:14px;border:1px solid var(--line2);
+    background:var(--panel);color:var(--gold);font-size:15px}
+  .toast{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(.8);opacity:0;
+    background:linear-gradient(150deg,#2B2312,#1E1911);border:1.5px solid var(--gold);border-radius:16px;
+    padding:14px 22px;text-align:center;pointer-events:none;transition:all .4s;z-index:9}
+  .toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .toast .t1{font-family:"Hiragino Mincho ProN",serif;font-size:17px;color:var(--gold);letter-spacing:.1em}
+  .toast .t2{font-size:11px;color:var(--mid);margin-top:3px}
+  .spark{position:absolute;color:#F5D98A;font-size:13px;animation:sp 1.2s ease-out forwards;pointer-events:none;z-index:8}
+  @keyframes sp{0%{opacity:0;transform:translateY(6px) scale(.6)}25%{opacity:1}100%{opacity:0;transform:translateY(-34px) scale(1.25)}}
+
+  /* ---- 画面2: 施設ページ ---- */
+  .backrow{font-size:12px;color:var(--acc);font-weight:700}
+  .hero{display:flex;gap:14px;margin-top:14px;align-items:flex-start}
+  .hero .seal svg{width:72px;height:72px}
+  .hero .nm{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:19px;font-weight:600;line-height:1.45}
+  .hero .loc{font-size:11px;color:var(--muted);margin-top:2px}
+  .badges{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap}
+  .badge{font-size:10px;font-weight:700;border:1px solid var(--line2);border-radius:6px;padding:1px 7px;color:var(--mid)}
+  .badge.lux{border-color:var(--gold);color:var(--gold)}
+  .statrow{display:flex;gap:10px;margin-top:14px}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 6px;text-align:center}
+  .stat .v{font-size:17px;font-weight:800;font-family:ui-monospace,monospace;color:var(--acc)}
+  .stat .k{font-size:9px;color:var(--muted);letter-spacing:.1em;margin-top:1px}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.2em;color:var(--muted)}
+  .ggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+  .thumb{height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:19px;border:1px solid var(--line2)}
+  .thumb.t1{background:linear-gradient(150deg,#2A4A56,#1B2E36)}
+  .thumb.t2{background:linear-gradient(150deg,#54402A,#332718)}
+  .thumb.t3{background:linear-gradient(150deg,#2E4A33,#1C2E20)}
+  .thumb.video{position:relative}
+  .thumb.video::after{content:"▶";position:absolute;right:5px;bottom:3px;font-size:10px;color:#fff;opacity:.9}
+  .addph{border:1.5px dashed var(--line2);border-radius:8px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;color:var(--muted);font-size:9px;gap:2px}
+  .addph b{font-size:16px;color:var(--acc);line-height:1}
+  .bars{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px}
+  .bhead{display:flex;justify-content:space-between;align-items:baseline}
+  .bhead .total{font-size:20px;font-weight:800;color:var(--acc);font-family:ui-monospace,monospace}
+  .brow{display:flex;align-items:center;gap:9px;margin-top:9px}
+  .brow .k{width:34px;font-size:11px;color:var(--mid);font-weight:700;flex-shrink:0}
+  .brow .tr{flex:1;height:6px;background:#2C271F;border-radius:3px;overflow:hidden}
+  .brow .tr>i{display:block;height:100%;background:linear-gradient(90deg,var(--accdeep),var(--acc));border-radius:3px}
+  .brow .v{width:16px;text-align:right;font-size:11px;font-family:ui-monospace,monospace;color:var(--mid)}
+  .histrow{display:flex;justify-content:space-between;align-items:center;background:var(--panel);
+    border:1px solid var(--line);border-radius:12px;padding:10px 13px;margin-top:8px;font-size:12px}
+  .histrow .d{font-family:ui-monospace,monospace;font-size:11px;color:var(--muted)}
+  .btnrow{display:flex;gap:8px;margin-top:16px}
+  .btn{flex:1;text-align:center;font-size:12px;font-weight:700;padding:11px 4px;border-radius:12px;
+    border:1px solid var(--line2);background:var(--panel);color:var(--text)}
+  .btn.primary{background:linear-gradient(160deg,var(--acc),var(--accdeep));border-color:transparent;color:#1A1206}
+  .btn.ghost{color:var(--gold);border-color:#57492B}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition-duration:.01ms!important;animation:none!important}
+  }
+</style>
+
+<p class="mocknote"><b>【モック v3】</b>双六そのものがメイン画面。<b>「スタンプを押す！」を押すと駒が進みます</b>（2回押すとシルバー関門）。データはダミー。</p>
+
+<!-- ============ 画面1: 双六ロード（インタラクティブ） ============ -->
+<div class="phone"><div class="inner" style="padding-bottom:0">
+  <header>
+    <div class="hrow"><h1>Bonvoyラリー</h1><span class="edition">2026年の道中</span></div>
+  </header>
+  <div class="hud">
+    <span class="n" id="nights">8<small>泊</small></span>
+    <div class="sub">5宿・3エリア・¥193,000<br>シルバーまで <b id="left">あと2泊</b></div>
+  </div>
+  <div class="segwrap">
+    <div class="segbar">
+      <span class="seg s1"><i id="sg1" style="width:80%"></i></span>
+      <span class="seg s2"><i id="sg2" style="width:0"></i></span>
+      <span class="seg s3"><i style="width:0"></i></span>
+      <span class="seg s4"><i style="width:0"></i></span>
+      <span class="seg s5"><i style="width:0"></i></span>
+    </div>
+    <div class="seglbl">
+      <span class="l1" id="lb1">銀10</span><span class="l2">金25</span><span class="l3">プラ50</span><span class="l4">チタン75</span><span class="l5">ア100</span>
+    </div>
+  </div>
+</div>
+
+<div class="stage" id="stage">
+  <div class="plane" id="plane"></div>
+  <div class="fog"></div>
+  <div class="toast" id="toast"><div class="t1">シルバーエリート達成</div><div class="t2">ボーナスポイント +10%・会員料金</div></div>
+  <div class="stagehud">
+    <button class="stampbtn" id="go">判子を押して進む</button>
+    <span class="maptgl">🗺</span>
+  </div>
+</div>
+</div>
+<p class="screenlabel">画面 1 ／ 記録タブ = 双六ロード（タップで進む）</p>
+
+<!-- ============ 画面2: 施設ページ ============ -->
+<div class="phone"><div class="inner">
+  <div class="backrow">‹ 記録へもどる</div>
+  <div class="hero">
+    <span class="seal" id="s-hero"></span>
+    <div>
+      <div class="nm">JWマリオット・<br>プーケット</div>
+      <div class="loc">タイ・プーケット（マイカオビーチ）</div>
+      <div class="badges"><span class="badge">JWマリオット</span><span class="badge lux">ラグジュアリー</span></div>
+    </div>
+  </div>
+  <div class="statrow">
+    <div class="stat"><div class="v">2回</div><div class="k">宿 泊</div></div>
+    <div class="stat"><div class="v">5泊</div><div class="k">通 算</div></div>
+    <div class="stat"><div class="v">4.6</div><div class="k">総 合</div></div>
+    <div class="stat"><div class="v">21枚</div><div class="k">写 真</div></div>
+  </div>
+  <div style="margin-top:16px" class="eyebrow">アルバム</div>
+  <div class="ggrid">
+    <span class="thumb t1">🏖️</span><span class="thumb t2">🍜</span>
+    <span class="thumb t3 video">🌅</span><span class="addph"><b>＋</b>写真・動画</span>
+  </div>
+  <div class="bars">
+    <div class="bhead"><span class="eyebrow">採 点</span><span class="total">4.6</span></div>
+    <div class="brow"><span class="k">立地</span><span class="tr"><i style="width:80%"></i></span><span class="v">4</span></div>
+    <div class="brow"><span class="k">部屋</span><span class="tr"><i style="width:100%"></i></span><span class="v">5</span></div>
+    <div class="brow"><span class="k">食事</span><span class="tr"><i style="width:100%"></i></span><span class="v">5</span></div>
+    <div class="brow"><span class="k">施設</span><span class="tr"><i style="width:100%"></i></span><span class="v">5</span></div>
+    <div class="brow"><span class="k">接客</span><span class="tr"><i style="width:80%"></i></span><span class="v">4</span></div>
+  </div>
+  <div style="margin-top:16px" class="eyebrow">宿泊履歴</div>
+  <div class="histrow"><span>2026-08-08 〜　3泊</span><span class="d">¥98,000・UG↑</span></div>
+  <div class="histrow"><span>2024-12-28 〜　2泊</span><span class="d">ポイント泊</span></div>
+  <div class="btnrow">
+    <div class="btn primary">泊まった（判子）</div>
+    <div class="btn ghost">★ 泊まりたい済</div>
+  </div>
+  <div class="btnrow"><div class="btn">Googleマップで開く</div></div>
+</div></div>
+<p class="screenlabel">画面 2 ／ 施設ページ（写真・動画・採点・履歴）</p>
+
+<script>
+"use strict";
+function seal(ch, shape, size, rot, ink){
+  ink=ink||"#C6402F";
+  let f;
+  if(shape==="hex") f='<polygon points="0,-34 30,-17 30,17 0,34 -30,17 -30,-17" fill="none" stroke="'+ink+'" stroke-width="5"/><polygon points="0,-26 23,-13 23,13 0,26 -23,13 -23,-13" fill="none" stroke="'+ink+'" stroke-width="1.4"/>';
+  else if(shape==="sq") f='<rect x="-31" y="-31" width="62" height="62" rx="6" fill="none" stroke="'+ink+'" stroke-width="5"/><rect x="-24" y="-24" width="48" height="48" fill="none" stroke="'+ink+'" stroke-width="1.4"/>';
+  else f='<circle r="33" fill="none" stroke="'+ink+'" stroke-width="5"/><circle r="26" fill="none" stroke="'+ink+'" stroke-width="1.4"/>';
+  return '<svg viewBox="-45 -45 90 90" width="'+size+'" height="'+size+'"><g opacity="0.85" transform="rotate('+rot+')">'+f+
+    '<text y="13" text-anchor="middle" font-size="36" font-weight="800" fill="'+ink+'" font-family="Hiragino Mincho ProN,Yu Mincho,serif">'+ch+'</text></g></svg>';
+}
+
+/* 道の定義: 1泊=1マス。9泊目以降は未来（モチーフ入りの空きマス） */
+const TILES=[
+  {n:1, seal:["モ","sq"],  dt:"1/17"},
+  {n:2, seal:["伊","circ"],dt:"2/21"},
+  {n:3, seal:["伊","circ"],dt:"2/22"},
+  {n:4, seal:["コ","sq"],  dt:"4/10"},
+  {n:5, seal:["W","hex"],  dt:"5/2", wife:true},
+  {n:6, seal:["J","hex"],  dt:"8/8"},
+  {n:7, seal:["J","hex"],  dt:"8/9"},
+  {n:8, seal:["J","hex"],  dt:"8/10"},
+  {n:9,  icon:"🧳"},
+  {n:10, gate:"銀", gname:"シルバー"},
+  {n:11, icon:"☕"},
+  {n:12, icon:"🏊", navy:true},
+  {n:13, icon:"🥐"},
+  {n:14, icon:"🔑"},
+  {n:15, icon:"🛎", navy:true},
+  {n:16, icon:"🌴"},
+  {n:17, icon:"🎁"},
+  {n:18, icon:"🧳"},
+];
+const STEP=112;
+const posOf=i=>{ const r=Math.floor((i-1)/3), k=(i-1)%3, c=(r%2? 2-k : k); return {x:c*STEP, y:-(r*STEP), r}; };
+
+const plane=document.getElementById("plane");
+let cur=8, wifeAt=5;
+let html="";
+TILES.forEach(t=>{
+  const p=posOf(t.n);
+  const cls="tile"+(t.navy?" navyt":"")+(t.gate?" gatecell":"");
+  const dim=Math.max(.55, 1-p.r*.055);
+  html+='<div class="'+cls+'" id="tile'+t.n+'" style="left:'+p.x+'px;top:'+(p.y-100)+'px;filter:brightness('+dim+')">'
+    +'<span class="no">'+t.n+'</span>'
+    +(t.seal?'<span class="seal">'+seal(t.seal[0],t.seal[1],74,((t.n*37)%9)-4)+'</span>':"")
+    +(t.icon?'<span class="icon">'+t.icon+'</span>':"")
+    +(t.gate?'<span class="icon" style="filter:none;opacity:1;font-family:Hiragino Mincho ProN,serif;font-size:34px;color:#8A6D35">'+t.gate+'</span>':"")
+    +(t.dt?'<span class="dt">'+t.dt+'</span>':"")
+    +'</div>';
+  if(t.gate){
+    html+='<div class="stand gate3d" id="gate" style="left:'+(p.x-25)+'px;top:'+(p.y-146)+'px">'
+      +'<div class="arch"><div class="pillar pl"></div><div class="pillar pr"></div>'
+      +'<div class="beam"><span class="cr">銀</span><span class="tx">SILVER GATE</span></div>'
+      +'<div class="lamp ll"></div><div class="lamp lr"></div></div></div>';
+  }
+});
+/* 駒（俊・紗也乃） */
+html+='<div class="stand pawn3d wife" id="pw" style="width:34px"><div class="head">紗</div><div class="base"></div></div>';
+html+='<div class="stand pawn3d me" id="pm" style="width:34px"><div class="head">俊</div><div class="base"></div></div>';
+plane.innerHTML=html;
+
+function placePawn(el,i,off){ const p=posOf(i); el.style.left=(p.x+33+(off||0))+"px"; el.style.top=(p.y-88)+"px"; }
+function camTo(i){ const p=posOf(i); plane.style.setProperty("--cam",(p.r*STEP-250)+"px"); }
+const pm=document.getElementById("pm"), pw=document.getElementById("pw");
+placePawn(pw,wifeAt,-14); placePawn(pm,cur,6); camTo(cur);
+/* 次マスの点線ハイライト */
+function markNext(){ TILES.forEach(t=>document.getElementById("tile"+t.n).classList.toggle("next",t.n===cur+1)); }
+markNext();
+
+const nightsEl=document.getElementById("nights"), leftEl=document.getElementById("left");
+const toast=document.getElementById("toast"), stage=document.getElementById("stage"), btn=document.getElementById("go");
+function sparkle(){
+  for(let i=0;i<10;i++){
+    const s=document.createElement("span"); s.className="spark"; s.textContent="✦";
+    s.style.left=(38+Math.random()*24)+"%"; s.style.top=(30+Math.random()*18)+"%";
+    s.style.animationDelay=(Math.random()*.5)+"s";
+    stage.appendChild(s); setTimeout(()=>s.remove(),1900);
+  }
+}
+btn.addEventListener("click",()=>{
+  if(cur>=TILES.length-1) return;
+  cur++;
+  const t=TILES[cur-1];
+  /* 進んだマスに判子が押される（デモ: 泊の丸判子） */
+  if(!t.seal && !t.gate){
+    const tile=document.getElementById("tile"+t.n);
+    tile.querySelector(".icon")?.remove();
+    tile.insertAdjacentHTML("beforeend",'<span class="seal">'+seal("泊","circ",74,((t.n*53)%9)-4)+"</span>");
+  }
+  pm.classList.remove("hop"); void pm.offsetWidth; pm.classList.add("hop");
+  placePawn(pm,cur,6); camTo(cur); markNext();
+  nightsEl.innerHTML=cur+"<small>泊</small>";
+  const to10=10-cur;
+  leftEl.textContent= to10>0? "あと"+to10+"泊" : "達成！";
+  document.getElementById("sg1").style.width=Math.min(100,cur*10)+"%";
+  if(cur>10) document.getElementById("sg2").style.width=Math.min(100,(cur-10)/15*100)+"%";
+  if(cur===10){
+    document.getElementById("lb1").classList.add("done");
+    document.getElementById("gate").classList.add("celebrate");
+    sparkle();
+    toast.classList.add("on"); setTimeout(()=>toast.classList.remove("on"),2600);
+    btn.textContent="判子を押して進む（金25へ）";
+    /* 歩いてきた道がシルバーに染まる（1マス目から順に波及） */
+    for(let i=1;i<=10;i++) setTimeout(()=>document.getElementById("tile"+i).classList.add("silver"), 500+i*130);
+  }
+});
+document.getElementById("s-hero").innerHTML=seal("J","hex",72,-5,"#E85C3A");
+</script>
