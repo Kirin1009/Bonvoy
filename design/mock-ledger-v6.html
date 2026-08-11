@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bonvoy Rally - Pop-up Heritage Travel Ledger v6</title>
+  <style>
+    :root {
+      --paper: #f7f0df;
+      --paper-light: #fffdf6;
+      --paper-deep: #e5d7b9;
+      --navy: #17294a;
+      --navy-soft: #34496e;
+      --ink: #2c2924;
+      --muted: #756b5c;
+      --brass: #a57d31;
+      --brass-light: #d0b16b;
+      --stamp: #b63d35;
+      --silver: #aeb8c5;
+      --line: #cdbf9f;
+      --green: #315f49;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: #d8c9a8;
+      color: var(--ink);
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      letter-spacing: 0;
+    }
+
+    button,
+    input { font: inherit; }
+
+    button { letter-spacing: 0; }
+
+    .app {
+      width: min(390px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      overflow: hidden;
+      background: var(--paper);
+      box-shadow: 0 0 38px rgba(23, 41, 74, 0.18);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      min-height: 76px;
+      padding: 18px 18px 14px;
+      color: var(--paper-light);
+      background: var(--navy);
+      border-bottom: 3px solid var(--brass);
+    }
+
+    .brand {
+      margin: 0 0 2px;
+      color: var(--brass-light);
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      font-size: 21px;
+      font-weight: 600;
+    }
+
+    .year {
+      padding-bottom: 2px;
+      color: #d9dfeb;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 116px 1fr;
+      min-height: 102px;
+      padding: 15px 18px 13px;
+      background: var(--paper-light);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .count {
+      display: flex;
+      align-items: baseline;
+      align-self: center;
+      color: var(--navy);
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 44px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .count small {
+      margin-left: 3px;
+      color: var(--muted);
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .goal-summary {
+      align-self: center;
+      padding-left: 16px;
+      border-left: 1px solid var(--line);
+    }
+
+    .goal-summary strong {
+      display: block;
+      color: var(--navy);
+      font-size: 17px;
+      line-height: 1.35;
+    }
+
+    .goal-summary span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .progress {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      margin-top: 9px;
+    }
+
+    .progress i {
+      position: relative;
+      display: block;
+      height: 5px;
+      overflow: hidden;
+      background: var(--paper-deep);
+      border-radius: 2px;
+    }
+
+    .progress i span {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 80%;
+      background: var(--brass);
+    }
+
+    .folio {
+      position: relative;
+      height: 462px;
+      margin: 14px 12px 0;
+      overflow: hidden;
+      background: var(--paper-light);
+      border: 1px solid var(--line);
+      border-left: 10px solid var(--navy);
+      box-shadow: 0 9px 18px rgba(57, 48, 35, 0.14), inset 7px 0 0 var(--paper-deep);
+      perspective: 820px;
+      perspective-origin: 50% 14%;
+    }
+
+    .folio::before,
+    .folio::after {
+      position: absolute;
+      left: -7px;
+      width: 4px;
+      height: 54px;
+      content: "";
+      background: var(--brass);
+    }
+
+    .folio::before { top: 30px; }
+    .folio::after { bottom: 30px; }
+
+    .folio-heading {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      z-index: 8;
+    }
+
+    .folio-heading b {
+      display: block;
+      color: var(--navy);
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      font-size: 15px;
+    }
+
+    .folio-heading span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .route {
+      position: absolute;
+      inset: 50px 4px 6px;
+      overflow: hidden;
+      transform-style: preserve-3d;
+    }
+
+    .pop-plane {
+      position: absolute;
+      left: 50%;
+      bottom: 90px;
+      width: 340px;
+      height: 430px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 16px 18px rgba(57, 48, 35, 0.2);
+      transform: translateX(-50%) rotateX(55deg);
+      transform-origin: 50% 100%;
+      transform-style: preserve-3d;
+    }
+
+    .pop-plane::after {
+      position: absolute;
+      top: 50%;
+      right: 0;
+      left: 0;
+      height: 1px;
+      content: "";
+      background: #d9ccb0;
+    }
+
+    .route-line {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .route-line path {
+      fill: none;
+      stroke: var(--brass-light);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-width: 4;
+    }
+
+    .route-line .future {
+      stroke: var(--silver);
+      stroke-dasharray: 6 7;
+      stroke-width: 3;
+    }
+
+    .tile {
+      position: absolute;
+      z-index: 2;
+      width: 76px;
+      height: 76px;
+      padding: 0;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--paper-light) url("../assets/vertical-slice/tile-cream-marble.webp") center / cover;
+      border: 1px solid #aa9f89;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(63, 53, 38, 0.14);
+      transform: translateZ(3px);
+      transform-style: preserve-3d;
+    }
+
+    .tile:focus-visible {
+      outline: 3px solid var(--navy-soft);
+      outline-offset: 2px;
+    }
+
+    .tile .number {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      color: #8b806e;
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .seal {
+      position: absolute;
+      top: 17px;
+      left: 18px;
+      display: grid;
+      width: 41px;
+      height: 41px;
+      place-items: center;
+      color: var(--stamp);
+      border: 3px solid var(--stamp);
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 2px var(--paper-light), inset 0 0 0 3px var(--stamp);
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      font-size: 17px;
+      font-weight: 800;
+      opacity: 0.88;
+      transform: rotate(-5deg);
+    }
+
+    .past {
+      filter: saturate(0.72) contrast(0.92);
+      opacity: 0.88;
+    }
+
+    .past:nth-of-type(even) .seal { transform: rotate(4deg); }
+
+    .current {
+      z-index: 4;
+      border: 3px solid var(--navy);
+      box-shadow: 0 8px 14px rgba(23, 41, 74, 0.28);
+      transform: translateZ(9px);
+    }
+
+    .current::after {
+      position: absolute;
+      right: 5px;
+      bottom: 4px;
+      padding: 1px 4px;
+      content: "現在地";
+      color: var(--paper-light);
+      background: var(--navy);
+      border-radius: 2px;
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .next {
+      border: 2px dashed var(--brass);
+      box-shadow: none;
+      opacity: 0.72;
+    }
+
+    .next .open-number {
+      display: grid;
+      height: 100%;
+      place-items: center;
+      color: var(--brass);
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .t1 { left: 8px; bottom: 15px; }
+    .t2 { left: 98px; bottom: 15px; }
+    .t3 { left: 188px; bottom: 15px; }
+    .t4 { left: 248px; bottom: 115px; }
+    .t5 { left: 158px; bottom: 115px; }
+    .t6 { left: 68px; bottom: 115px; }
+    .t7 { left: 8px; bottom: 215px; }
+    .t8 { left: 98px; bottom: 215px; }
+    .t9 { left: 188px; bottom: 215px; }
+
+    .stand {
+      position: absolute;
+      z-index: 7;
+      transform: rotateX(-55deg) translateZ(10px);
+      transform-origin: 50% 100%;
+      transform-style: preserve-3d;
+    }
+
+    .cars {
+      left: 86px;
+      bottom: 257px;
+      width: 110px;
+      height: 65px;
+      pointer-events: none;
+    }
+
+    .car {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 3px rgba(23, 41, 74, 0.3));
+    }
+
+    .car-shun { top: -5px; left: 0; }
+    .car-sayano { top: 15px; left: 40px; }
+
+    .cars::after {
+      position: absolute;
+      right: 0;
+      bottom: -2px;
+      padding: 2px 5px;
+      content: "現在地・8泊目";
+      color: var(--paper-light);
+      background: var(--navy);
+      border-radius: 2px;
+      font-size: 8px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .gate {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 7px 5px rgba(46, 54, 66, 0.25));
+      pointer-events: none;
+    }
+
+    .gate-stand {
+      right: -6px;
+      bottom: 286px;
+      width: 164px;
+      height: 164px;
+    }
+
+    .goal-tag {
+      position: absolute;
+      top: 2px;
+      right: 16px;
+      z-index: 7;
+      width: 104px;
+      padding: 5px 7px;
+      color: var(--navy);
+      background: rgba(255, 253, 246, 0.92);
+      border: 1px solid var(--silver);
+      border-radius: 4px;
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .selection {
+      display: grid;
+      grid-template-columns: 62px 1fr;
+      min-height: 58px;
+      margin: 10px 18px 0;
+      padding: 8px 0 10px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .selection .date {
+      align-self: center;
+      color: var(--stamp);
+      font-family: ui-monospace, "SFMono-Regular", monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .selection strong {
+      display: block;
+      color: var(--navy);
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      font-size: 14px;
+    }
+
+    .selection span {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 112px;
+      gap: 8px;
+      padding: 12px 18px 10px;
+    }
+
+    .primary,
+    .secondary {
+      min-height: 46px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .primary {
+      color: var(--paper-light);
+      background: var(--navy);
+      border: 1px solid var(--navy);
+      box-shadow: 0 3px 0 #0d1b33;
+    }
+
+    .primary:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #0d1b33;
+    }
+
+    .secondary {
+      color: var(--navy);
+      background: var(--paper-light);
+      border: 1px solid var(--line);
+    }
+
+    .milestones {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 0 18px 20px;
+      color: var(--muted);
+      font-size: 9px;
+      text-align: center;
+    }
+
+    .milestones b {
+      display: block;
+      color: var(--brass);
+      font-size: 11px;
+    }
+
+    dialog {
+      width: min(342px, calc(100% - 32px));
+      padding: 0;
+      color: var(--ink);
+      background: var(--paper-light);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 18px 45px rgba(23, 41, 74, 0.35);
+    }
+
+    dialog::backdrop { background: rgba(23, 41, 74, 0.62); }
+
+    .dialog-body { padding: 20px; }
+
+    .dialog-body h2 {
+      margin: 0;
+      color: var(--navy);
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      font-size: 19px;
+    }
+
+    .dialog-body p {
+      margin: 7px 0 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .dialog-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    @media (max-width: 390px) {
+      .app { box-shadow: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <p class="brand">Bonvoy Rally</p>
+        <h1>旅の台帳</h1>
+      </div>
+      <div class="year">2026年</div>
+    </header>
+
+    <section class="summary" aria-label="2026年の宿泊進捗">
+      <div class="count">8<small>泊</small></div>
+      <div class="goal-summary">
+        <strong>あと2泊でシルバー</strong>
+        <span>5宿・3エリア・193,000円</span>
+        <div class="progress" aria-label="シルバーまで8割">
+          <i><span></span></i><i></i><i></i><i></i><i></i>
+        </div>
+      </div>
+    </section>
+
+    <section class="folio" aria-label="2026年の宿泊記録の道">
+      <div class="folio-heading">
+        <b>今年の宿泊印</b>
+        <span>8泊目・JWマリオット プーケット</span>
+      </div>
+
+      <div class="route">
+        <div class="pop-plane">
+          <svg class="route-line" viewBox="0 0 340 430" aria-hidden="true">
+            <path d="M46 377 H226 Q290 377 290 315 V278 Q290 257 248 257 H46 Q18 257 18 229 V197 Q18 157 60 157 H226" />
+            <path class="future" d="M226 157 H292 Q314 157 314 126 V76" />
+          </svg>
+
+        <button class="tile past t1" data-date="01/14" data-hotel="東京マリオットホテル" data-meta="1泊・今年最初の宿泊" aria-label="1泊目 東京マリオットホテル">
+          <span class="number">1</span><span class="seal">東</span>
+        </button>
+        <button class="tile past t2" data-date="02/08" data-hotel="伊豆マリオットホテル修善寺" data-meta="1泊・温泉の旅" aria-label="2泊目 伊豆マリオットホテル修善寺">
+          <span class="number">2</span><span class="seal">伊</span>
+        </button>
+        <button class="tile past t3" data-date="03/22" data-hotel="軽井沢マリオットホテル" data-meta="1泊・長野" aria-label="3泊目 軽井沢マリオットホテル">
+          <span class="number">3</span><span class="seal">軽</span>
+        </button>
+        <button class="tile past t4" data-date="04/10" data-hotel="コートヤード・バンコク" data-meta="1泊・タイ" aria-label="4泊目 コートヤード バンコク">
+          <span class="number">4</span><span class="seal">コ</span>
+        </button>
+        <button class="tile past t5" data-date="05/02" data-hotel="W大阪" data-meta="1泊目・大阪" aria-label="5泊目 W大阪">
+          <span class="number">5</span><span class="seal">W</span>
+        </button>
+        <button class="tile past t6" data-date="05/03" data-hotel="W大阪" data-meta="2泊目・大阪" aria-label="6泊目 W大阪">
+          <span class="number">6</span><span class="seal">W</span>
+        </button>
+        <button class="tile past t7" data-date="07/21" data-hotel="JWマリオット奈良" data-meta="1泊・奈良" aria-label="8泊目の前の記録 JWマリオット奈良">
+          <span class="number">7</span><span class="seal">J</span>
+        </button>
+        <button class="tile current t8" data-date="08/08" data-hotel="JWマリオット・プーケット" data-meta="現在地・8泊目" aria-label="現在地 8泊目 JWマリオット プーケット">
+          <span class="number">8</span><span class="seal">J</span>
+        </button>
+        <button class="tile next t9" data-date="次の宿泊" data-hotel="9泊目の記録" data-meta="シルバーまであと1泊" aria-label="次の宿泊 9泊目">
+          <span class="number">9</span><span class="open-number">9</span>
+        </button>
+
+          <div class="stand cars" aria-hidden="true">
+            <img class="car car-shun" src="../assets/vertical-slice/pawn-shun-m3-touring.webp" alt="">
+            <img class="car car-sayano" src="../assets/vertical-slice/pawn-sayano-220-coupe.webp" alt="">
+          </div>
+
+          <div class="stand gate-stand">
+            <img class="gate" src="../assets/vertical-slice/gate-silver.webp" alt="シルバーゲート">
+          </div>
+        </div>
+        <div class="goal-tag">10泊・シルバー</div>
+      </div>
+    </section>
+
+    <section class="selection" aria-live="polite">
+      <div class="date" id="selected-date">08/08</div>
+      <div>
+        <strong id="selected-hotel">JWマリオット・プーケット</strong>
+        <span id="selected-meta">現在地・8泊目</span>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="primary" id="record-stay">宿泊を記録</button>
+      <button class="secondary" type="button">記録一覧</button>
+    </div>
+
+    <div class="milestones" aria-label="年間ティア目標">
+      <span><b>10</b>銀</span>
+      <span><b>25</b>金</span>
+      <span><b>50</b>プラチナ</span>
+      <span><b>75</b>チタン</span>
+      <span><b>100</b>アンバサダー</span>
+    </div>
+  </main>
+
+  <dialog id="stay-dialog">
+    <div class="dialog-body">
+      <h2>宿泊を記録</h2>
+      <p>宿泊先と日付を選ぶと、台帳へ新しい判子が加わります。</p>
+      <div class="dialog-actions">
+        <button class="secondary" id="close-dialog" type="button">閉じる</button>
+        <button class="primary" type="button">宿泊先を選ぶ</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    "use strict";
+
+    const selectedDate = document.getElementById("selected-date");
+    const selectedHotel = document.getElementById("selected-hotel");
+    const selectedMeta = document.getElementById("selected-meta");
+    const stayDialog = document.getElementById("stay-dialog");
+
+    document.querySelectorAll(".tile").forEach((tile) => {
+      tile.addEventListener("click", () => {
+        selectedDate.textContent = tile.dataset.date;
+        selectedHotel.textContent = tile.dataset.hotel;
+        selectedMeta.textContent = tile.dataset.meta;
+      });
+    });
+
+    document.getElementById("record-stay").addEventListener("click", () => stayDialog.showModal());
+    document.getElementById("close-dialog").addEventListener("click", () => stayDialog.close());
+  </script>
+</body>
+</html>
