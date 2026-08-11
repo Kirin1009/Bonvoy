@@ -3,7 +3,7 @@
 マリオット ボンヴォイのホテルを泊まり歩く個人用スタンプ帳。オーナー：Shun（岐阜在住）。ユーザーは本人と妻・紗也乃の2名。
 姉妹アプリ **Sauna470s / サ道場 東海**（リポジトリ Kirin1009/SAUNA30）から判子エンジンを移植した独立プロジェクト。サウナ側とデータ・コードの共有はない。
 
-公開URL: https://kirin1009.github.io/bonvoy/ （GitHub Pages, mainブランチ直デプロイ。初回はSettings→Pages→main/rootの有効化が必要）
+公開URL: https://kirin1009.github.io/Bonvoy/ （GitHub Pages, mainブランチ直デプロイ。**大文字B** — パスは大文字小文字を区別し、小文字 /bonvoy/ は404になる）
 
 ## コンセプト
 
