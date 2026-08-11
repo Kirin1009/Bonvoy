@@ -206,25 +206,33 @@
     .pop-plane {
       position: absolute;
       left: 50%;
-      bottom: 90px;
-      width: 340px;
-      height: 430px;
-      background: var(--paper);
-      border: 1px solid var(--line);
-      box-shadow: 0 16px 18px rgba(57, 48, 35, 0.2);
-      transform: translateX(-50%) rotateX(55deg);
-      transform-origin: 50% 100%;
+      bottom: 0;
+      width: 356px;
+      height: 400px;
+      transform: translateX(-50%);
       transform-style: preserve-3d;
+    }
+
+    .pop-plane::before {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      content: "";
+      background: var(--paper);
+      clip-path: polygon(36% 0, 64% 0, 100% 100%, 0 100%);
+      filter: drop-shadow(0 12px 8px rgba(57, 48, 35, 0.22));
     }
 
     .pop-plane::after {
       position: absolute;
-      top: 50%;
-      right: 0;
-      left: 0;
-      height: 1px;
+      top: 0;
+      right: 80px;
+      left: 80px;
+      z-index: 3;
+      height: 96px;
       content: "";
-      background: #d9ccb0;
+      background: linear-gradient(to bottom, rgba(255, 253, 246, 0.88), rgba(255, 253, 246, 0));
+      pointer-events: none;
     }
 
     .route-line {
@@ -252,6 +260,7 @@
     }
 
     .tile {
+      --depth-scale: 1;
       position: absolute;
       z-index: 2;
       width: 76px;
@@ -262,9 +271,9 @@
       background: var(--paper-light) url("../assets/vertical-slice/tile-cream-marble.webp") center / cover;
       border: 1px solid #aa9f89;
       border-radius: 6px;
-      box-shadow: 0 4px 6px rgba(63, 53, 38, 0.14);
-      transform: translateZ(3px);
-      transform-style: preserve-3d;
+      box-shadow: 0 5px 0 rgba(93, 81, 62, 0.2), 0 9px 10px rgba(63, 53, 38, 0.16);
+      transform: scale(var(--depth-scale)) scaleY(0.62);
+      transform-origin: 50% 100%;
     }
 
     .tile:focus-visible {
@@ -312,7 +321,6 @@
       z-index: 4;
       border: 3px solid var(--navy);
       box-shadow: 0 8px 14px rgba(23, 41, 74, 0.28);
-      transform: translateZ(9px);
     }
 
     .current::after {
@@ -320,7 +328,7 @@
       right: 5px;
       bottom: 4px;
       padding: 1px 4px;
-      content: "現在地";
+      content: none;
       color: var(--paper-light);
       background: var(--navy);
       border-radius: 2px;
@@ -344,47 +352,57 @@
       font-weight: 800;
     }
 
-    .t1 { left: 8px; bottom: 15px; }
-    .t2 { left: 98px; bottom: 15px; }
-    .t3 { left: 188px; bottom: 15px; }
-    .t4 { left: 248px; bottom: 115px; }
-    .t5 { left: 158px; bottom: 115px; }
-    .t6 { left: 68px; bottom: 115px; }
-    .t7 { left: 8px; bottom: 215px; }
-    .t8 { left: 98px; bottom: 215px; }
-    .t9 { left: 188px; bottom: 215px; }
+    .t1,
+    .t2,
+    .t3 { --depth-scale: 1.14; bottom: 4px; }
+
+    .t4,
+    .t5,
+    .t6 { --depth-scale: 0.92; bottom: 94px; }
+
+    .t7,
+    .t8,
+    .t9 { --depth-scale: 0.72; bottom: 184px; }
+
+    .t1 { left: 8px; }
+    .t2 { left: 122px; }
+    .t3 { left: 236px; }
+    .t4 { left: 244px; }
+    .t5 { left: 154px; }
+    .t6 { left: 64px; }
+    .t7 { left: 104px; opacity: 0.66; }
+    .t8 { left: 166px; }
+    .t9 { left: 228px; opacity: 0.62; }
 
     .stand {
       position: absolute;
       z-index: 7;
-      transform: rotateX(-55deg) translateZ(10px);
-      transform-origin: 50% 100%;
       transform-style: preserve-3d;
     }
 
     .cars {
-      left: 86px;
-      bottom: 257px;
-      width: 110px;
-      height: 65px;
+      top: 114px;
+      left: 137px;
+      width: 124px;
+      height: 72px;
       pointer-events: none;
     }
 
     .car {
       position: absolute;
-      width: 70px;
-      height: 70px;
+      width: 64px;
+      height: 64px;
       object-fit: contain;
       filter: drop-shadow(0 4px 3px rgba(23, 41, 74, 0.3));
     }
 
-    .car-shun { top: -5px; left: 0; }
-    .car-sayano { top: 15px; left: 40px; }
+    .car-shun { top: 0; left: 0; }
+    .car-sayano { top: 8px; left: 60px; }
 
     .cars::after {
       position: absolute;
-      right: 0;
-      bottom: -2px;
+      right: 18px;
+      bottom: 0;
       padding: 2px 5px;
       content: "現在地・8泊目";
       color: var(--paper-light);
@@ -405,10 +423,10 @@
     }
 
     .gate-stand {
-      right: -6px;
-      bottom: 286px;
-      width: 164px;
-      height: 164px;
+      top: 2px;
+      right: 15px;
+      width: 142px;
+      height: 142px;
     }
 
     .goal-tag {
@@ -582,9 +600,9 @@
 
       <div class="route">
         <div class="pop-plane">
-          <svg class="route-line" viewBox="0 0 340 430" aria-hidden="true">
-            <path d="M46 377 H226 Q290 377 290 315 V278 Q290 257 248 257 H46 Q18 257 18 229 V197 Q18 157 60 157 H226" />
-            <path class="future" d="M226 157 H292 Q314 157 314 126 V76" />
+          <svg class="route-line" viewBox="0 0 356 400" aria-hidden="true">
+            <path d="M46 350 H274 Q326 350 326 310 Q326 260 282 260 H102 Q48 260 48 222 Q48 170 142 170 H266" />
+            <path class="future" d="M266 170 Q306 170 306 134 V86" />
           </svg>
 
         <button class="tile past t1" data-date="01/14" data-hotel="東京マリオットホテル" data-meta="1泊・今年最初の宿泊" aria-label="1泊目 東京マリオットホテル">
