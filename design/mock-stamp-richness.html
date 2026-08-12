@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stamp richness comparison</title>
+  <style>
+    :root { color-scheme: dark; font-family: Arial, "Hiragino Sans", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 840px; background: #111315; color: #f2f3f0; }
+    .sheet { width: 840px; margin: 0 auto; padding: 24px 20px 28px; }
+    .title { margin: 0 0 14px; font-size: 14px; font-weight: 600; letter-spacing: 0; color: #d7d9d5; }
+    .compare { display: grid; grid-template-columns: 390px 390px; gap: 20px; }
+    .panel { overflow: hidden; border: 1px solid #34383a; border-radius: 6px; background: #16191b; }
+    .caption { height: 38px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #d1d5d2; border-bottom: 1px solid #34383a; }
+    .world { position: relative; width: 390px; height: 844px; overflow: hidden; background: #abc5c7; }
+    .world img { position: absolute; width: 390px; height: 844px; object-fit: cover; inset: 0; }
+    .world::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(8,23,25,.10), transparent 28%, transparent 76%, rgba(10,35,35,.22)); }
+    .stamp { position: absolute; width: 78px; height: 78px; z-index: 2; }
+    .stamp.small { width: 64px; height: 64px; }
+    .s1 { left: 83px; top: 187px; } .s2 { left: 232px; top: 361px; } .s3 { left: 135px; top: 646px; }
+    .key { position: absolute; left: 16px; top: 16px; z-index: 3; padding: 7px 9px; background: rgba(17,25,26,.74); border: 1px solid rgba(245,244,236,.18); color: #eef1eb; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <h1 class="title">Bonvoy world stamp comparison at 390px</h1>
+    <section class="compare" aria-label="Current and proposed stamps over the world map">
+      <article class="panel"><div class="caption">Current</div><div class="world" id="legacy"><span class="key">3 stays</span><img src="../assets/world/base-atlas-unbuilt.webp" alt=""></div></article>
+      <article class="panel"><div class="caption">Proposed</div><div class="world" id="proposed"><span class="key">3 stays</span><img src="../assets/world/base-atlas-unbuilt.webp" alt=""></div></article>
+    </section>
+  </main>
+  <script>
+    const items = [
+      { klass: 's1', shape: 'hex', city: 'HKT', mark: 'J' },
+      { klass: 's2 small', shape: 'square', city: 'OSA', mark: 'W' },
+      { klass: 's3', shape: 'circle', city: 'IZU', mark: 'M' }
+    ];
+
+    const outline = (shape) => {
+      if (shape === 'hex') return '<path d="M0 -42 L36 -21 L36 21 L0 42 L-36 21 L-36 -21 Z"/>';
+      if (shape === 'square') return '<rect x="-39" y="-39" width="78" height="78" rx="5"/>';
+      return '<circle r="40"/>';
+    };
+    const inner = (shape) => {
+      if (shape === 'hex') return '<path d="M0 -31 L27 -16 L27 16 L0 31 L-27 16 L-27 -16 Z"/>';
+      if (shape === 'square') return '<rect x="-29" y="-29" width="58" height="58" rx="3"/>';
+      return '<circle r="30"/>';
+    };
+    const legacy = ({ shape, city, mark }, i) => `
+      <svg class="stamp ${items[i].klass}" viewBox="-50 -50 100 100" aria-label="${city} hotel stamp">
+        <g transform="rotate(${[-8, 5, -4][i]})" fill="none" stroke="#c6402f">
+          <g stroke-width="5">${outline(shape)}</g>
+          <g stroke-width="1.4">${inner(shape)}</g>
+          <text x="0" y="12" text-anchor="middle" stroke="none" fill="#c6402f" font-size="36" font-weight="700">${mark}</text>
+        </g>
+      </svg>`;
+    const premium = ({ shape, city, mark }, i) => `
+      <svg class="stamp ${items[i].klass}" viewBox="-50 -50 100 100" aria-label="${city} refined hotel stamp">
+        <defs>
+          <clipPath id="clip${i}">${outline(shape)}</clipPath>
+          <filter id="rough${i}" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency=".45" numOctaves="2" seed="${17 + i * 29}" result="noise"/>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15" xChannelSelector="R" yChannelSelector="G"/>
+          </filter>
+          <mask id="wear${i}" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-50" y="-50" width="100" height="100">
+            <image href="../assets/world/stamp-wear-mask.webp" x="-50" y="-50" width="100" height="100"/>
+          </mask>
+        </defs>
+        <g transform="rotate(${[-3, 2, -1][i]})">
+          <image href="../assets/world/stamp-press-relief.webp" x="-47" y="-46" width="94" height="94" opacity=".18" style="mix-blend-mode:multiply"/>
+          <g fill="#8e241d" opacity=".16">${outline(shape)}</g>
+          <g fill="none" stroke="#b63b2e" stroke-linecap="round" stroke-linejoin="round" mask="url(#wear${i})" filter="url(#rough${i})">
+            <g stroke-width="5.5">${outline(shape)}</g>
+            <g stroke-width="1.25">${inner(shape)}</g>
+            <path d="M-18 -13H18" stroke-width="1.15" opacity=".75"/>
+            <path d="M-13 20H13" stroke-width="1.15" opacity=".68"/>
+            <text x="0" y="-18" text-anchor="middle" stroke="none" fill="#b63b2e" font-size="5.5" font-weight="700" letter-spacing=".55">${city}</text>
+            <text x="0" y="10" text-anchor="middle" stroke="none" fill="#b63b2e" font-size="34" font-weight="700">${mark}</text>
+            <text x="0" y="27" text-anchor="middle" stroke="none" fill="#b63b2e" font-size="4.5" font-weight="600" letter-spacing=".5">BONVOY</text>
+          </g>
+          <image href="../assets/world/stamp-ink-mottle.webp" x="-43" y="-43" width="86" height="86" opacity=".27" clip-path="url(#clip${i})" style="mix-blend-mode:multiply"/>
+          <g fill="none" stroke="#d85a43" stroke-width=".75" opacity=".2">${outline(shape)}</g>
+        </g>
+      </svg>`;
+    items.forEach((item, i) => {
+      document.querySelector('#legacy').insertAdjacentHTML('beforeend', legacy(item, i));
+      document.querySelector('#proposed').insertAdjacentHTML('beforeend', premium(item, i));
+    });
+  </script>
+</body>
+</html>
