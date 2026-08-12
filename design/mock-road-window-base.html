@@ -28,10 +28,12 @@ img.base{width:100%;display:block}
 </div>
 <script>
 const A="../assets/world/", INK="#B63B2E", DEEP="#8E241D";
-const STAYS=[{c:"Ｓ",s:"1泊"},{c:"Ｊ",s:"3泊"},{c:"Ｍ",s:"4泊"},{c:"Ｉ",s:"2泊"}]; /* 古→新。近い順に積む */
+const STAYS=(new URLSearchParams(location.search).get("n")==="2")
+   ? [{c:"Ｍ",s:"4泊"},{c:"Ｉ",s:"2泊"}]                                      /* 契約どおり: near+currentのみ */
+   : [{c:"Ｓ",s:"1泊"},{c:"Ｊ",s:"3泊"},{c:"Ｍ",s:"4泊"},{c:"Ｉ",s:"2泊"}];   /* 4マス案 */
 const BLDS=["hotel-generic-luxury-city.webp","hotel-generic-premium-city.webp","hotel-generic-select-city.webp",
             "hotel-generic-premium-resort.webp","hotel-generic-luxury-resort.webp"];
-const __J={"schemaVersion":1,"note":"Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation.","canvas":{"width":852,"height":1515},"base":{"asset":"assets/world/road-window-grand-highway-unbuilt.webp","hotelState":"unbuilt","gateState":"none-baked"},"tiles":[{"id":"near","corners":{"topLeft":[98,1032],"topRight":[753,1032],"bottomRight":[846,1444],"bottomLeft":[5,1444]}},{"id":"current","corners":{"topLeft":[201,751],"topRight":[652,751],"bottomRight":[700,994],"bottomLeft":[154,994]}},{"id":"next","corners":{"topLeft":[263,545],"topRight":[587,545],"bottomRight":[620,705],"bottomLeft":[229,705]}},{"id":"mid","corners":{"topLeft":[308,405],"topRight":[541,405],"bottomRight":[570,516],"bottomLeft":[278,516]}},{"id":"far","corners":{"topLeft":[340,303],"topRight":[510,303],"bottomRight":[530,390],"bottomLeft":[322,390]}}],"gate":{"horizon":{"center":[426,255],"size":[48,62],"rotation":0},"near":{"center":[426,430],"size":[152,184],"rotation":0},"travel":{"scale":[0.29,1.0],"opacity":[0.58,1.0]}},"pawns":{"shun":{"center":[405,710],"size":[80,106],"rotation":0},"sayano":{"center":[458,720],"size":[63,84],"rotation":0}},"buildingZones":[{"id":"nearLeft","corners":{"topLeft":[86,382],"topRight":[178,382],"bottomRight":[170,434],"bottomLeft":[72,434]}},{"id":"nearRight","corners":{"topLeft":[701,489],"topRight":[805,489],"bottomRight":[817,553],"bottomLeft":[708,553]}},{"id":"midLeft","corners":{"topLeft":[104,289],"topRight":[223,289],"bottomRight":[216,341],"bottomLeft":[93,341]}},{"id":"midRight","corners":{"topLeft":[617,286],"topRight":[728,286],"bottomRight":[738,337],"bottomLeft":[624,337]}},{"id":"farLeft","corners":{"topLeft":[204,235],"topRight":[299,235],"bottomRight":[295,271],"bottomLeft":[200,271]}},{"id":"farRight","corners":{"topLeft":[586,232],"topRight":[686,232],"bottomRight":[691,267],"bottomLeft":[589,267]}}]};
+const __J={"schemaVersion":2,"note":"Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation. Gates are transparent, road-spanning overlays anchored at tile boundaries; never put a gate on top of a tile.","canvas":{"width":852,"height":1515},"base":{"asset":"assets/world/road-window-grand-highway-unbuilt.webp","hotelState":"unbuilt","gateState":"none-baked"},"tiles":[{"id":"near","corners":{"topLeft":[98,1032],"topRight":[753,1032],"bottomRight":[846,1444],"bottomLeft":[5,1444]}},{"id":"current","corners":{"topLeft":[201,751],"topRight":[652,751],"bottomRight":[700,994],"bottomLeft":[154,994]}},{"id":"next","corners":{"topLeft":[263,545],"topRight":[587,545],"bottomRight":[620,705],"bottomLeft":[229,705]}},{"id":"mid","corners":{"topLeft":[308,405],"topRight":[541,405],"bottomRight":[570,516],"bottomLeft":[278,516]}},{"id":"far","corners":{"topLeft":[340,303],"topRight":[510,303],"bottomRight":[530,390],"bottomLeft":[322,390]}}],"gate":{"assetAspect":[512,341],"placement":"Render the asset at the declared width with height:auto. Align its horizontal center to centerX and its bottom edge to baselineY. The transparent opening must leave stamps and pawns visible as they pass under it.","horizon":{"boundary":{"between":["far","mid"]},"centerX":426,"baselineY":397,"width":218,"rotation":0},"near":{"boundary":{"between":["next","current"]},"centerX":426,"baselineY":728,"width":432,"rotation":0},"travel":{"baselineY":[397,728],"width":[218,432],"opacity":[0.58,1.0]}},"pawns":{"shun":{"tile":"current","center":[395,865],"size":[80,106],"rotation":0},"sayano":{"tile":"current","center":[459,865],"size":[63,84],"rotation":0}},"buildingZones":[{"id":"nearLeft","corners":{"topLeft":[86,382],"topRight":[178,382],"bottomRight":[170,434],"bottomLeft":[72,434]}},{"id":"nearRight","corners":{"topLeft":[701,489],"topRight":[805,489],"bottomRight":[817,553],"bottomLeft":[708,553]}},{"id":"midLeft","corners":{"topLeft":[104,289],"topRight":[223,289],"bottomRight":[216,341],"bottomLeft":[93,341]}},{"id":"midRight","corners":{"topLeft":[617,286],"topRight":[728,286],"bottomRight":[738,337],"bottomLeft":[624,337]}},{"id":"farLeft","corners":{"topLeft":[204,235],"topRight":[299,235],"bottomRight":[295,271],"bottomLeft":[200,271]}},{"id":"farRight","corners":{"topLeft":[586,232],"topRight":[686,232],"bottomRight":[691,267],"bottomLeft":[589,267]}}]};
 (J=>{
  const W=J.canvas.width, H=J.canvas.height, B=document.getElementById("b");
  const cs=c=>[c.topLeft,c.topRight,c.bottomRight,c.bottomLeft];
@@ -76,27 +78,24 @@ const __J={"schemaVersion":1,"note":"Grand Highway unbuilt and gateless fixed-wi
   e.style.cssText=`left:${bx/W*100}%;top:${by/H*100}%;width:${w/W*100}%`;
   e.innerHTML=`<img src="${A}${BLDS[i]}">`; B.appendChild(e);
  });
- /* ゲート: 道を跨ぐ。マスとマスの境界に立ち、両脚が路肩に載る幅で置く。
-    そこを"くぐる"ことが体験の核なので、マスの上に被せない。 */
+ /* ゲート: 契約v2。baselineY(下端)とwidthだけを補間し、高さは素材比から出す。
+    プラチナ(50泊)へ 41/50 → 25泊起点で64%地点に接近中。 */
  (function(){
-  const roadW=y=>273+0.498*(y-340);                    /* 実測から起こした道幅の近似 */
-  const AR=420/512;                                    /* ゲート素材の縦横比 */
-  /* 最新判子のマスの、ひとつ奥の境界に立てる（進捗が進むほど手前の境界へ降りてくる） */
-  const ahead=Math.min(STAYS.length+1, J.tiles.length-1);
-  const aq=cs(J.tiles[ahead].corners), bq=cs(J.tiles[ahead-1].corners);
-  const gy=(Math.max(aq[2][1],aq[3][1]) + Math.min(bq[0][1],bq[1][1]))/2;
-  const gw=roadW(gy)*1.10, gh=gw*AR;
+  const g=J.gate, t=(41-25)/(50-25);
+  const lerp=(a,b)=>a+(b-a)*t;
+  const by=lerp(g.travel.baselineY[0], g.travel.baselineY[1]);
+  const gw=lerp(g.travel.width[0],     g.travel.width[1]);
+  const gh=gw*(g.assetAspect[1]/g.assetAspect[0]);
   const ge=document.createElement("span"); ge.className="spr";
-  ge.style.cssText=`left:${426/W*100}%;top:${(gy+gh*0.10)/H*100}%;width:${gw/W*100}%;opacity:.96`;
+  ge.style.cssText=`left:${g.near.centerX/W*100}%;top:${by/H*100}%;width:${gw/W*100}%;opacity:${lerp(g.travel.opacity[0],g.travel.opacity[1])}`;
   ge.innerHTML=`<img src="${A}gate-platinum-50.webp">`; B.appendChild(ge);
  })();
- /* 愛車: 契約のpawns.shun */
- const ct=cs(J.tiles[STAYS.length-1].corners);            /* 最新判子のマス */
- const cx2=ct[3][0]+(ct[2][0]-ct[3][0])*0.28, cy2=(ct[3][1]+ct[2][1])/2+6;
- const cw=Math.abs(ct[2][0]-ct[3][0])*0.62;
- const pe=document.createElement("span"); pe.className="spr";
- pe.style.cssText=`left:${cx2/W*100}%;top:${cy2/H*100}%;width:${cw/W*100}%`;
- pe.innerHTML=`<img src="${A}pawn-shun-m3.webp">`; B.appendChild(pe);
+ /* 愛車: 契約v2の pawns（currentタイル内） */
+ (function(){
+  const p=J.pawns.shun, pe=document.createElement("span"); pe.className="spr";
+  pe.style.cssText=`left:${p.center[0]/W*100}%;top:${(p.center[1]+p.size[1]/2)/H*100}%;width:${p.size[0]*2.0/W*100}%`;
+  pe.innerHTML=`<img src="${A}pawn-shun-m3.webp">`; B.appendChild(pe);
+ })();
  /* ===== 過ぎてきた道: 手前へ丸く落ち込む薄いマス（可読性は不要） ===== */
  (function(){
   const PW=852, N=6, PH=420;                       /* 6マス分 */
