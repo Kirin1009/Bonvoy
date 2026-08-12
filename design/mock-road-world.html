@@ -1,0 +1,191 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grand Highway ロードワールド v1</title>
+<style>
+:root{--cream:#F4EBD8;--navy:#3A4A6B}
+body{margin:0;background:var(--cream);font-family:'Hiragino Mincho ProN','Yu Mincho',serif}
+.wrap{max-width:390px;margin:0 auto;padding-bottom:18px}
+.hud{display:flex;align-items:center;gap:11px;background:var(--navy);border-radius:14px;padding:10px 14px;color:#F4EBD8;margin:12px 12px 0}
+.hud .n{font-size:26px;font-weight:800;font-family:ui-monospace,monospace;color:#F0D9A6;line-height:1}
+.hud .n small{font-size:11px}
+.hud .s{font-size:10.5px;line-height:1.5;color:#D9CDB8}.hud .s b{color:#F0D9A6}
+.board{width:100%;margin-top:12px;border-radius:16px;overflow:hidden}
+.win{position:relative;width:100%;line-height:0}
+img.env{width:100%;display:block}
+.layer{position:absolute;inset:0;overflow:hidden}
+/* タイル素材をホモグラフィで台形へ。border-radiusは変換前に効くので角丸が保たれる */
+.tile{position:absolute;left:0;top:0;width:1px;height:1px;transform-origin:0 0;
+  background-image:url(../assets/world/road-world-tile-cream.webp);
+  background-size:114% 114%;background-position:center;   /* 素材の白フチを外す */
+  border-radius:.06px;box-shadow:0 .01px .014px rgba(48,30,10,.24)}
+.ovl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.spr{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 5px 7px rgba(30,20,8,.45))}
+.spr img{width:100%;display:block}
+.cta{margin:12px;padding:13px;border-radius:12px;background:var(--navy);color:#F0D9A6;text-align:center;
+  font-size:14px;font-weight:700;letter-spacing:.1em;cursor:pointer;user-select:none}
+.note{font-size:11px;color:#7A6A55;margin:10px 18px 0;line-height:1.7}
+</style>
+<div class="wrap">
+<div class="hud"><span class="n" id="hn">41<small>泊</small></span>
+<div class="s">2026年・9カ国 15宿<br><b id="hs">プラチナまで あと9泊</b></div></div>
+<div class="board"><div class="win" id="b">
+  <img class="env" src="../assets/world/road-world-environment-v1.webp" alt="">
+  <div class="layer" id="L"></div>
+</div></div>
+<div class="cta" id="cta">宿泊を記録する</div>
+<p class="note">road-world-kit-v1 の深度式で構成。押すと全要素が deltaPerStay ぶん手前へ流れます（環境だけ動かない）。</p>
+</div>
+<script>
+const A="../assets/world/", INK="#B63B2E", DEEP="#8E241D";
+const K=window.__KIT__;
+const W=K.canvas.width, H=K.canvas.height, CX=K.depthAxis.positionFormula.centerX;
+const D=K.depthAxis.deltaPerStay;
+const L=document.getElementById("L");
+
+/* ---- 深度式（契約 positionFormula をそのまま実装） ---- */
+function slot(z){
+  const topY=300+1140*Math.pow(Math.max(z,0),1.4);
+  const bottomY=topY+44+102*z;
+  const topW=140+510*z, botW=topW+36+48*z;
+  return {z,topY,bottomY,topW,botW,
+    quad:[[CX-topW/2,topY],[CX+topW/2,topY],[CX+botW/2,bottomY],[CX-botW/2,bottomY]]};
+}
+/* ---- 単位正方形 → 任意四角形 のホモグラフィ（CSS matrix3d） ---- */
+function homography(q){
+  const [x0,y0]=q[0],[x1,y1]=q[1],[x2,y2]=q[2],[x3,y3]=q[3];
+  const dx1=x1-x2, dx2=x3-x2, dy1=y1-y2, dy2=y3-y2;
+  const sx=x0-x1+x2-x3, sy=y0-y1+y2-y3;
+  const den=dx1*dy2-dx2*dy1;
+  const g=(sx*dy2-dx2*sy)/den, h=(dx1*sy-sx*dy1)/den;
+  const a=x1-x0+g*x1, b=x3-x0+h*x3, c=x0;
+  const d=y1-y0+g*y1, e=y3-y0+h*y3, f=y0;
+  return `matrix3d(${a},${d},0,${g}, ${b},${e},0,${h}, 0,0,1,0, ${c},${f},0,1)`;
+}
+/* ---- 判子（タイルの上に、四隅に沿って） ---- */
+let uid=0;
+function sealPath(st,s,op){
+  const q=s.quad, u="k"+(++uid);
+  const c=[(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4];
+  const ins=k=>q.map(p=>[c[0]+(p[0]-c[0])*k, c[1]+(p[1]-c[1])*k]);
+  const d=p=>"M"+p.map(z=>z.join(",")).join("L")+"Z";
+  const o=ins(.80), n=ins(.70), h=s.bottomY-s.topY, fs=Math.min(h*.46, s.topW*.22);
+  const xs=q.map(p=>p[0]), ys=q.map(p=>p[1]);
+  const bx=Math.min(...xs), by=Math.min(...ys), bw=Math.max(...xs)-bx, bh=Math.max(...ys)-by;
+  let g=`<defs><clipPath id="${u}c"><path d="${d(o)}"/></clipPath>
+    <mask id="${u}m"><path d="${d(q)}" fill="#fff"/>
+    <image href="${A}stamp-wear-mask.webp" x="${bx}" y="${by}" width="${bw}" height="${bh}" preserveAspectRatio="none" opacity=".85"/></mask></defs>
+    <g opacity="${op}">
+    <path d="${d(o)}" fill="${DEEP}" opacity=".13"/>
+    <g filter="url(#sealtex2)" opacity=".95" mask="url(#${u}m)">
+      <path d="${d(o)}" fill="none" stroke="${INK}" stroke-width="${Math.max(h*.055,2.5)}" stroke-linejoin="round"/>
+      <path d="${d(n)}" fill="none" stroke="${INK}" stroke-width="${Math.max(h*.014,1)}"/>`;
+  if(st.label!==false){
+    g+=`<text x="${c[0]-fs*.42}" y="${c[1]+fs*.34}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${INK}"
+        font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${st.c}</text>
+      <text x="${c[0]+fs*.62}" y="${c[1]+fs*.30}" text-anchor="middle" font-size="${fs*.42}" font-weight="600" fill="${INK}"
+        font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${st.s}</text>`;
+  }
+  g+=`</g><image href="${A}stamp-ink-mottle.webp" x="${bx}" y="${by}" width="${bw}" height="${bh}"
+      preserveAspectRatio="none" opacity=".26" style="mix-blend-mode:multiply" clip-path="url(#${u}c)"/></g>`;
+  return g;
+}
+/* ---- 宿の区画（左右交互。同じ z で動く） ---- */
+function pad(s,side){
+  const off=48+94*s.z, w=68+112*s.z;
+  return {x: side==="left" ? CX-s.botW/2-off : CX+s.botW/2+off,
+          y: s.bottomY-8, w};
+}
+
+/* ---- データ: 新しいものほど奥（チャッピー回答②「手前=古い、奥=新しい」） ---- */
+const STAYS=[  /* 先頭が最新 */
+  {c:"Ｉ",s:"2泊",b:"hotel-generic-luxury-city.webp"},
+  {c:"Ｍ",s:"4泊",b:"hotel-generic-select-city.webp"},
+  {c:"Ｊ",s:"3泊",b:"hotel-generic-premium-city.webp"},
+  {c:"Ｓ",s:"1泊",b:"hotel-generic-premium-resort.webp"},
+  {c:"バ",s:"1泊",b:"hotel-generic-luxury-resort.webp",label:false},
+  {c:"Ｏ",s:"3泊",b:"hotel-generic-select-resort.webp",label:false},
+  {c:"Ｇ",s:"6泊",b:"hotel-generic-premium-city.webp",label:false},
+  {c:"Ｃ",s:"3泊",b:"hotel-generic-select-city.webp",label:false},
+  {c:"Ｒ",s:"1泊",b:"hotel-generic-luxury-city.webp",label:false}
+];
+const Z_NEWEST=0.38;                    /* 最新滞在の位置。手前へ行くほど古い */
+const ECHO_FROM=4;                      /* これ以降は残像（ラベルなし・薄い） */
+const ECHO_OP=[.30,.22,.15,.10,.06];
+let nights=41;
+
+function draw(prog){
+  const K_=(L.clientWidth||390)/W;          /* 自然px → 表示px */
+  L.innerHTML=""; let svg="";
+  const items=[];
+  STAYS.forEach((st,i)=>{
+    const z=Z_NEWEST + (i+prog)*D;
+    if(z>1.24) return;
+    const s=slot(z);
+    const echo=i>=ECHO_FROM;
+    const op=echo ? (ECHO_OP[Math.min(i-ECHO_FROM,ECHO_OP.length-1)]) : 1;
+    items.push({st,s,i,echo,op});
+  });
+  /* 未来の空マス（最新より奥） */
+  for(let k=1;k<=3;k++){
+    const z=Z_NEWEST-(k-prog)*D; if(z<0.02) continue;
+    items.push({st:null,s:slot(z),i:-k,echo:false,op:1});
+  }
+  items.sort((a,b)=>a.s.z-b.s.z);        /* 奥から描く */
+
+  items.forEach(it=>{
+    /* 宿のミニチュア（タイルより先に置いて、手前のタイルに隠れないよう奥から） */
+    if(it.st && !it.echo){
+      const p=pad(it.s, it.i%2 ? "right":"left");
+      const e=document.createElement("span"); e.className="spr";
+      e.style.cssText=`left:${p.x/W*100}%;top:${p.y/H*100}%;width:${p.w*1.5/W*100}%;opacity:${it.op}`;
+      e.innerHTML=`<img src="${A}${it.st.b}">`; L.appendChild(e);
+    }
+    /* タイル素材をホモグラフィで台形へ */
+    const t=document.createElement("div"); t.className="tile";
+    t.style.transform=homography(it.s.quad.map(p=>[p[0]*K_, p[1]*K_]));   /* 表示px系で解く */
+    t.style.opacity=it.echo?Math.min(it.op*1.7,1):1;
+    L.appendChild(t);
+    if(it.st) svg+=sealPath(it.st, it.s, it.echo?it.op:1);
+  });
+
+  L.insertAdjacentHTML("beforeend",
+    `<svg class="ovl" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>
+     <filter id="sealtex2" x="-15%" y="-15%" width="130%" height="130%">
+     <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
+     <feDisplacementMap in="SourceGraphic" scale="1.2"/></filter></defs>${svg}</svg>`);
+
+  /* ゲート: 最新マスのひとつ奥の境界に立つ */
+  const gz=Z_NEWEST-(1-prog)*D, gs=slot(Math.max(gz,0.02));
+  const gw=gs.botW*1.12, gh=gw*341/512;
+  const ge=document.createElement("span"); ge.className="spr";
+  ge.style.cssText=`left:${CX/W*100}%;top:${gs.bottomY/H*100}%;width:${gw/W*100}%`;
+  ge.innerHTML=`<img src="${A}gate-platinum-50.webp">`; L.appendChild(ge);
+
+  /* 愛車: 最新マス（＝現在地）の上 */
+  const cs2=slot(Z_NEWEST+prog*D), ci=K.content.stays.current.carInset;
+  const cx=cs2.quad[3][0]+(cs2.quad[2][0]-cs2.quad[3][0])*ci[0];
+  const cy=cs2.topY+(cs2.bottomY-cs2.topY)*ci[1];
+  const pe=document.createElement("span"); pe.className="spr";
+  pe.style.cssText=`left:${cx/W*100}%;top:${cy/H*100}%;width:${cs2.botW*0.42/W*100}%`;
+  pe.innerHTML=`<img src="${A}pawn-shun-m3.webp">`; L.appendChild(pe);
+}
+
+let anim=null;
+document.getElementById("cta").addEventListener("click",()=>{
+  if(anim) return;
+  const t0=performance.now(), DUR=K.transition.durationMs;
+  const ease=x=>1-Math.pow(1-x,3);
+  anim=requestAnimationFrame(function f(now){
+    const k=Math.min(1,(now-t0)/DUR);
+    draw(ease(k));
+    if(k<1) anim=requestAnimationFrame(f);
+    else{ anim=null; nights+=2;
+      STAYS.unshift({c:"Ｎ",s:"2泊",b:"hotel-generic-premium-resort.webp"});
+      STAYS.forEach((s,i)=>{ if(i>=ECHO_FROM) s.label=false; });
+      document.getElementById("hn").innerHTML=nights+"<small>泊</small>";
+      document.getElementById("hs").textContent=nights>=50?"プラチナ達成":`プラチナまで あと${50-nights}泊`;
+      draw(0); }
+  });
+});
+draw(0);
+window.__draw=draw; window.__ready=true;
+</script>
