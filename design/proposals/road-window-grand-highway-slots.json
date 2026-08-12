@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 1,
-  "note": "Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation.",
+  "schemaVersion": 2,
+  "note": "Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation. Gates are transparent, road-spanning overlays anchored at tile boundaries; never put a gate on top of a tile.",
   "canvas": {
     "width": 852,
     "height": 1515
@@ -58,29 +58,42 @@
     }
   ],
   "gate": {
+    "assetAspect": [512, 341],
+    "placement": "Render the asset at the declared width with height:auto. Align its horizontal center to centerX and its bottom edge to baselineY. The transparent opening must leave stamps and pawns visible as they pass under it.",
     "horizon": {
-      "center": [426, 255],
-      "size": [48, 62],
+      "boundary": {
+        "between": ["far", "mid"]
+      },
+      "centerX": 426,
+      "baselineY": 397,
+      "width": 218,
       "rotation": 0
     },
     "near": {
-      "center": [426, 430],
-      "size": [152, 184],
+      "boundary": {
+        "between": ["next", "current"]
+      },
+      "centerX": 426,
+      "baselineY": 728,
+      "width": 432,
       "rotation": 0
     },
     "travel": {
-      "scale": [0.29, 1.0],
+      "baselineY": [397, 728],
+      "width": [218, 432],
       "opacity": [0.58, 1.0]
     }
   },
   "pawns": {
     "shun": {
-      "center": [405, 710],
+      "tile": "current",
+      "center": [395, 865],
       "size": [80, 106],
       "rotation": 0
     },
     "sayano": {
-      "center": [458, 720],
+      "tile": "current",
+      "center": [459, 865],
       "size": [63, 84],
       "rotation": 0
     }
