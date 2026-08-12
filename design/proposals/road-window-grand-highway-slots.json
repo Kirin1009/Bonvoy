@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "note": "Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation.",
+  "canvas": {
+    "width": 852,
+    "height": 1515
+  },
+  "base": {
+    "asset": "assets/world/road-window-grand-highway-unbuilt.webp",
+    "hotelState": "unbuilt",
+    "gateState": "none-baked"
+  },
+  "tiles": [
+    {
+      "id": "near",
+      "corners": {
+        "topLeft": [98, 1032],
+        "topRight": [753, 1032],
+        "bottomRight": [846, 1444],
+        "bottomLeft": [5, 1444]
+      }
+    },
+    {
+      "id": "current",
+      "corners": {
+        "topLeft": [201, 751],
+        "topRight": [652, 751],
+        "bottomRight": [700, 994],
+        "bottomLeft": [154, 994]
+      }
+    },
+    {
+      "id": "next",
+      "corners": {
+        "topLeft": [263, 545],
+        "topRight": [587, 545],
+        "bottomRight": [620, 705],
+        "bottomLeft": [229, 705]
+      }
+    },
+    {
+      "id": "mid",
+      "corners": {
+        "topLeft": [308, 405],
+        "topRight": [541, 405],
+        "bottomRight": [570, 516],
+        "bottomLeft": [278, 516]
+      }
+    },
+    {
+      "id": "far",
+      "corners": {
+        "topLeft": [340, 303],
+        "topRight": [510, 303],
+        "bottomRight": [530, 390],
+        "bottomLeft": [322, 390]
+      }
+    }
+  ],
+  "gate": {
+    "horizon": {
+      "center": [426, 255],
+      "size": [48, 62],
+      "rotation": 0
+    },
+    "near": {
+      "center": [426, 430],
+      "size": [152, 184],
+      "rotation": 0
+    },
+    "travel": {
+      "scale": [0.29, 1.0],
+      "opacity": [0.58, 1.0]
+    }
+  },
+  "pawns": {
+    "shun": {
+      "center": [405, 710],
+      "size": [80, 106],
+      "rotation": 0
+    },
+    "sayano": {
+      "center": [458, 720],
+      "size": [63, 84],
+      "rotation": 0
+    }
+  },
+  "buildingZones": [
+    {
+      "id": "nearLeft",
+      "corners": { "topLeft": [86, 382], "topRight": [178, 382], "bottomRight": [170, 434], "bottomLeft": [72, 434] }
+    },
+    {
+      "id": "nearRight",
+      "corners": { "topLeft": [701, 489], "topRight": [805, 489], "bottomRight": [817, 553], "bottomLeft": [708, 553] }
+    },
+    {
+      "id": "midLeft",
+      "corners": { "topLeft": [104, 289], "topRight": [223, 289], "bottomRight": [216, 341], "bottomLeft": [93, 341] }
+    },
+    {
+      "id": "midRight",
+      "corners": { "topLeft": [617, 286], "topRight": [728, 286], "bottomRight": [738, 337], "bottomLeft": [624, 337] }
+    },
+    {
+      "id": "farLeft",
+      "corners": { "topLeft": [204, 235], "topRight": [299, 235], "bottomRight": [295, 271], "bottomLeft": [200, 271] }
+    },
+    {
+      "id": "farRight",
+      "corners": { "topLeft": [586, 232], "topRight": [686, 232], "bottomRight": [691, 267], "bottomLeft": [589, 267] }
+    }
+  ]
+}
