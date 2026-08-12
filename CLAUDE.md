@@ -18,6 +18,8 @@
 - デザイン統合フロー: チャッピーの納品PR → ココが本体へ統合 → 390px確認 → PR → Shun承認でマージ
 - **3者の会話はGitHubのIssue/PRコメントで行う**（リアルタイム同席は不可。Issueが会議室）。デザイン議論のホーム: Issue #4「デザインキックオフ」
 - 現在のデザイン到達点: `design/mock-sugoroku.html`（双六ステータスロードのモック）
+- Git運用: `work` を共同統合ブランチとし、各エージェントの作業ブランチから `work` 向けPRを作る。`main` はShun承認後のリリース専用
+- ココは通常の編集・検証・commit・push・`work` 向けPR作成を自律的に進める。Shunへの確認はスコープ変更、テイストの最終判断、課金、データ削除、`main` へのmergeに限る
 
 ## コンセプト
 
@@ -29,22 +31,21 @@
 
 - **index.html単体完結**（依存ライブラリゼロ、ビルドなし）。独立PWA（manifest.json / sw.js / アイコンはSauna470sと共通の暫定品）
 - データ：localStorage `bonvoy:v1` = `{stays:{hid:date}, wants:{hid:date}, radius}`
-- バージョンは `APP_VERSION` の1箇所（現在 `0.1.0`）。SWは `./sw.js?v=<APP_VERSION>` で登録、キャッシュ名 `bonvoy-<ver>` は自動追従。MAJOR=データ互換の変更 / MINOR=機能追加 / PATCH=修正
-- `EDITION` はホテルデータを収録した日付（現在「準備中」）
-- **HOTELS は空**。1行 = `{id, name, city, pref, lat, lng, brand, cat}`。brandは `BRANDS` のキー、catはBonvoy公式区分（luxury/premium/select/longstay）
-- `BRANDS` に19ブランド定義済み（リッツ・カールトン〜モクシー）
-- ラリーは `QUESTS`（はじめての一泊/ラグジュアリー巡り/ブランド集め/全店制覇の雛形4本）。HOTELSから動的に対象を組む
+- バージョンは `APP_VERSION` の1箇所（現在 `0.3.0`）。SWは `./sw.js?v=<APP_VERSION>` で登録、キャッシュ名 `bonvoy-<ver>` は自動追従。MAJOR=データ互換の変更 / MINOR=機能追加 / PATCH=修正
+- `EDITION` はホテルデータの収録日（現在「2026.08.10 タイ・日本編」）
+- **HOTELS は116軒収録済み**（日本67＋タイ49。全件公式ページで座標確認済み）。1行 = `{id, name, city, pref, lat, lng, brand, cat}`。`id`は変更禁止（記録のキー）、`city`=エリア、`pref`=国名（海外）or 都道府県
+- `BRANDS` は21ブランド定義済み（ルメリディアン・トリビュート・デザインホテルズ含む）
+- ラリーは `QUESTS` 基本4本＋国制覇・エリア制覇を `HOTELS` から動的生成（計20本）
 - **ホテル判子の自動生成**（`hotelSeal()`）：形=区分（六角=luxury/丸=premium/角=select/五角=longstay）、中央=施設名の頭文字、肩=都市。かすれは共有フィルタ `#sealtex`、傾きはidハッシュ。未泊は形と「？」で伏せる
 - ホテルカード（`openHotel()`）に手動判子・☆泊まりたい・Googleマップを集約。GPSチェックインは半径200〜2000m（既定800m。ホテルは敷地が広い）
-- UIの世界観はSauna470s系（クリーム地・こげ茶・判子朱）。アクセントは紺 `--navy #3A4A6B`
+- UIの世界観はSauna470s系（クリーム地・こげ茶・判子朱）。アクセントは紺 `--navy #3A4A6B`。v1.0.0で温黒×オレンジ×真鍮のダーク案を検討中（design/mock-sugoroku.html）
 
-## 次にやること（未着手）
+## 次にやること（docs/要件定義.md のロードマップ準拠）
 
-1. **収録範囲を決める**（日本全店？よく行く都市圏？）→ 実データを投入して `EDITION` を付ける
-   - 座標はGoogleマップ等で1軒ずつ確認する。ジオコーディングでの代替は不可（サウナ側で精度75m〜2.1kmのばらつきを実測済み）
-2. アイコンをBonvoy用に描き替え（今はサウナハットのキャラの流用）
-3. ラリーの拡充（都道府県制覇・カテゴリ制覇・エリート泊数など）と満願之証
-4. 泊数・ポイント・採点など記録項目の検討（サ道場の採点画面の型が流用できる）
+1. **デザインキックオフ（Issue #4）の合意** → チャッピーの素材制作開始
+2. **v0.4.0** — 国別切替表示（F-19）、バックアップ（F-15）
+3. **v1.0.0** — `bonvoy:v2` 移行＋台帳ファーストUI: 双六ステータスロード（F-18）、宿泊記録（F-14: 泊数・価格・ポイント/UG）、採点5項目（F-17）、Googleスプレッドシート同期（F-20, muge.cxのWorkspace）
+4. **v1.1.0〜** — ベトナム・シンガポールのデータ、アイコン差し替え、満願之証、履歴取り込み実験
 
 ## 変更時の絶対ルール
 
@@ -53,4 +54,4 @@
 3. リリース時は `APP_VERSION` を上げる（sw.jsは自動追従、手で触らない）
 4. スマホ幅390pxで確認する（Playwright chromium は PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers）
 5. ホテルデータの捏造禁止（実データ主義）
-6. GitHub操作：gh CLI不可。git pushは可、PR作成/マージはGitHub MCPツールで
+6. GitHub操作：**ココ（Claude Codeリモート環境）は gh CLI不可** — git pushは可、PR/Issue操作はGitHub MCPツールで行う。**チャッピー（Mac環境）は git・gh 使用可**（Macのキーチェーン認証。サンドボックスの `gh auth status` だけで未認証と断定しない）
