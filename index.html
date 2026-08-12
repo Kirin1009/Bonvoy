@@ -208,7 +208,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.0.1";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -473,7 +473,8 @@ function nextTier(nights){ for(const t of TIERS) if(nights<t[0]) return t; retur
    座標契約: design/proposals/world-atlas-anchors.json（852x1842自然px、lotsは建物下端中央）。
    EXTRA_LOTSはココが盤面から実測した追加区画。 */
 const WORLD_BASE="assets/world/base-atlas-gateless.webp";
-const WORLD_SQ={"1": [427, 1590], "2": [425, 1453], "3": [370, 1327], "4": [412, 1205], "5": [450, 1088], "6": [448, 974], "7": [421, 860], "8": [421, 751], "9": [441, 661], "10": [446, 585], "11": [419, 525], "12": [438, 470]};
+/* 各マスの実測値（中心x,y・幅w・高さh・傾きrot。ベース画像852x1842から目視採寸）。判子はこの枠形に押される */
+const WORLD_SQ={"1":{x:525,y:1540,w:200,h:175,rot:8},"2":{x:495,y:1415,w:170,h:74,rot:0},"3":{x:450,y:1330,w:190,h:96,rot:3},"4":{x:455,y:1222,w:172,h:92,rot:-10},"5":{x:483,y:1128,w:168,h:88,rot:8},"6":{x:410,y:988,w:158,h:88,rot:4},"7":{x:478,y:862,w:150,h:88,rot:-8},"8":{x:460,y:757,w:148,h:84,rot:8},"9":{x:505,y:655,w:135,h:76,rot:-2},"10":{x:505,y:590,w:130,h:72,rot:-14},"11":{x:488,y:518,w:125,h:66,rot:10},"12":{x:475,y:448,w:120,h:62,rot:-6}};
 const WORLD_GATE_XY=[441, 665];
 const WORLD_GATES=[{"nights": 10, "asset": "assets/vertical-slice/gate-silver.webp", "scale": 0.24}, {"nights": 25, "asset": "assets/world/gate-gold-25.webp", "scale": 0.24}, {"nights": 50, "asset": "assets/world/gate-platinum-50.webp", "scale": 0.24}, {"nights": 75, "asset": "assets/world/gate-titanium-75.webp", "scale": 0.24}, {"nights": 100, "asset": "assets/world/gate-ambassador-100.webp", "scale": 0.24}];
 const WORLD_DEDICATED={"jw-phuket": {"asset": "assets/world/hotel-jw-phuket.webp", "w": 213.7}, "w-osaka": {"asset": "assets/world/hotel-w-osaka.webp", "w": 123.1}, "cy-nagoya": {"asset": "assets/world/hotel-courtyard-nagoya.webp", "w": 148.5}, "marriott-shuzenji": {"asset": "assets/world/hotel-izu-marriott.webp", "w": 138.2}, "moxy-honmachi": {"asset": "assets/world/hotel-moxy-osaka.webp", "w": 93.6}};
@@ -517,11 +518,12 @@ function renderWorld(){
     const sq=WORLD_SQ[ix+1]; if(!sq) return;
     const i=hotelInfo(nd.hid)||{name:"泊"};
     const ch=(i.name||"泊").replace(/[ 　]/g,"")[0];
-    const shape=i.cat==="luxury"?"hex":(i.cat==="select"?"sq":"circ");
-    sSpr+=`<span class="wstamp" onclick="window.__hotel('${nd.hid}')" style="left:${wpct(sq[0],852)};top:${wpct(sq[1],1842)};width:${wpct(86,852)}">${worldSeal(ch,shape,((ix*37)%9)-4)}</span>`;
+    const jit=((ix*37)%5)-2;                                         /* 手押しの揺らぎ ±2° */
+    const vw=sq.w*0.84+16;
+    sSpr+=`<span class="wstamp" onclick="window.__hotel('${nd.hid}')" style="left:${wpct(sq.x,852)};top:${wpct(sq.y,1842)};width:${wpct(vw,852)};transform:translate(-50%,-50%) rotate(${sq.rot+jit}deg)">${roadSeal(ch,sq)}</span>`;
     if(ix===win.length-1)
       cSpr=`<img class="wcar" src="assets/world/${state.car==="220"?"pawn-sayano-220":"pawn-shun-m3"}.webp" alt="現在地"
-        style="left:${wpct(sq[0]-51,852)};top:${wpct(sq[1]+36,1842)};width:${wpct(102,852)}">`;
+        style="left:${wpct(sq.x-51,852)};top:${wpct(sq.y+36,1842)};width:${wpct(102,852)}">`;
   });
   if(nt){
     const g=WORLD_GATES.find(g=>g.nights===nt[0]);
@@ -529,7 +531,7 @@ function renderWorld(){
       style="left:${wpct(WORLD_GATE_XY[0],852)};top:${wpct(WORLD_GATE_XY[1],1842)};width:${wpct(512*g.scale,852)}">`;
   }
   document.getElementById("wboard").innerHTML=
-    `<img class="wbase" src="${WORLD_BASE}" alt="">`+hSpr+gSpr+sSpr+cSpr+
+    `<img class="wbase" src="${WORLD_BASE}" alt="">`+hSpr+sSpr+gSpr+cSpr+
     (over>0?`<button class="wmore" onclick="window.__tab('book')">ほか${over}宿 ›</button>`:"");
 }
 /* リッチ判子（design/proposals/stamp-spec.md 準拠）
@@ -562,6 +564,29 @@ function worldSeal(ch,shape,rot){
       <text y="13" text-anchor="middle" font-size="34" font-weight="600" fill="${STAMP_INK}" font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${esc(ch)}</text></g>
     <image href="assets/world/stamp-ink-mottle.webp" x="-45" y="-45" width="90" height="90" opacity="0.30" style="mix-blend-mode:multiply" clip-path="url(#${u}c)"/>
   </g></svg>`;
+}
+/* 道の判子: マスの枠形（角丸四角）そのままに押す。文字は中央、枠が朱になる */
+function roadSeal(ch,sq){
+  const u="rs"+(++sealUid);
+  const a=sq.w*0.42, b=sq.h*0.42;                                    /* マスの84%を判子面に */
+  const rx=Math.min(a,b)*0.34, fs=Math.min(a,b)*1.25;
+  const vb=`${-(a+8)} ${-(b+8)} ${(a+8)*2} ${(b+8)*2}`;
+  const outer=`<rect x="${-a}" y="${-b}" width="${a*2}" height="${b*2}" rx="${rx}"`;
+  const inner=`<rect x="${-a+7}" y="${-b+7}" width="${(a-7)*2}" height="${(b-7)*2}" rx="${Math.max(rx-5,3)}"`;
+  return `<svg viewBox="${vb}">
+  <defs>
+    <clipPath id="${u}c">${outer}/></clipPath>
+    <mask id="${u}m"><rect x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" fill="#fff"/><image href="assets/world/stamp-wear-mask.webp" x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" preserveAspectRatio="none" opacity="0.85"/></mask>
+  </defs>
+  <image href="assets/world/stamp-press-relief.webp" x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" preserveAspectRatio="none" opacity="0.16" style="mix-blend-mode:multiply"/>
+  <g opacity="0.15">${outer} fill="${STAMP_DEEP}"/></g>
+  <g filter="url(#sealtex2)" opacity="0.95" mask="url(#${u}m)">
+    ${outer} fill="none" stroke="${STAMP_INK}" stroke-width="6" stroke-linejoin="round"/>
+    ${inner} fill="none" stroke="${STAMP_INK}" stroke-width="1.6"/>
+    <text y="${fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${STAMP_INK}" font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${esc(ch)}</text>
+  </g>
+  <image href="assets/world/stamp-ink-mottle.webp" x="${-a}" y="${-b}" width="${a*2}" height="${b*2}" preserveAspectRatio="none" opacity="0.30" style="mix-blend-mode:multiply" clip-path="url(#${u}c)"/>
+</svg>`;
 }
 
 /* ========== ラリー（カウント型が主役 / コンプ型は裏目標） ========== */
