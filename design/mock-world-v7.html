@@ -86,12 +86,13 @@
 /* ---- 座標契約 (world-atlas-anchors.json より) ---- */
 const IMG_W=852, IMG_H=1842;
 const SQ={1:[427,1590],2:[425,1453],3:[370,1327],4:[412,1205],5:[450,1088],6:[448,974],7:[421,860],8:[421,751],9:[441,661],10:[446,585],11:[419,525],12:[438,470]};
+/* dx/dy = 区画への接地補正(実測キャリブレーション値, 画像px) */
 const LOTS={
-  "moxy-osaka":     {x:668,y:466, w:390*0.24, img:"hotel-moxy-osaka.webp"},
-  "izu-marriott":   {x:423,y:380, w:512*0.27, img:"hotel-izu-marriott.webp"},
-  "cy-nagoya":      {x:108,y:752, w:512*0.29, img:"hotel-courtyard-nagoya.webp"},
-  "w-osaka":        {x:704,y:798, w:397*0.31, img:"hotel-w-osaka.webp"},
-  "jw-phuket":      {x:126,y:1108,w:497*0.43, img:"hotel-jw-phuket.webp"}
+  "moxy-osaka":     {x:668,y:466, dx:6,  dy:38, w:390*0.24, img:"hotel-moxy-osaka.webp"},
+  "izu-marriott":   {x:423,y:380, dx:0,  dy:34, w:512*0.27, img:"hotel-izu-marriott.webp"},
+  "cy-nagoya":      {x:108,y:752, dx:14, dy:42, w:512*0.29, img:"hotel-courtyard-nagoya.webp"},
+  "w-osaka":        {x:704,y:798, dx:0,  dy:46, w:397*0.31, img:"hotel-w-osaka.webp"},
+  "jw-phuket":      {x:126,y:1108,dx:18, dy:52, w:497*0.43, img:"hotel-jw-phuket.webp"}
 };
 const CARS={ shun:{w:512*0.20,img:"pawn-shun-m3.webp",off:-26}, sayano:{w:512*0.18,img:"pawn-sayano-220.webp",off:30} };
 /* ダミー宿泊シーケンス(2026年) */
@@ -172,7 +173,7 @@ document.getElementById("go").addEventListener("click",()=>{
   const lot=LOTS[st.hotel];
   setTimeout(()=>{
     hotelsL.insertAdjacentHTML("beforeend",
-      '<span class="spr pop" style="left:'+pct(lot.x,IMG_W)+';top:'+pct(lot.y,IMG_H)+';width:'+px2wPct(lot.w)+'">'+
+      '<span class="spr pop" style="left:'+pct(lot.x+(lot.dx||0),IMG_W)+';top:'+pct(lot.y+(lot.dy||0),IMG_H)+';width:'+px2wPct(lot.w)+'">'+
       '<img src="../assets/world/'+lot.img+'" alt="'+st.name+'"></span>');
     sparkleAt(lot.x,lot.y-40);
     toast(st.name+" が建った", st.d+"・"+st.n+"泊");
