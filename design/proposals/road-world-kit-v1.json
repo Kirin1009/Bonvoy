@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "note": "Continuous road-world kit for the Grand Highway. The environment is fixed; tiles, hotel miniatures, stamps, cars, and gates share one depth coordinate and move together. All coordinates are natural pixels on the 852 x 1515 environment image.",
+  "canvas": {
+    "width": 852,
+    "height": 1515
+  },
+  "environment": {
+    "asset": "assets/world/road-world-environment-v1.webp",
+    "role": "fixed scenic layer only; it contains no tile, pad, hotel, stamp, car, or gate",
+    "scrolls": false
+  },
+  "tile": {
+    "asset": "assets/world/road-world-tile-cream.webp",
+    "role": "single rich porcelain material reused for every stay tile",
+    "shape": "rounded trapezoid",
+    "edge": {
+      "navyInsetPxAt512": 16,
+      "brassCornerCaps": true,
+      "dropShadow": "0 8px 10px rgba(48, 30, 10, 0.22)"
+    }
+  },
+  "depthAxis": {
+    "meaning": "z=0 is the horizon; z=1 is the foreground rim. A new stay advances every moving world item by deltaPerStay toward the foreground.",
+    "visibleRange": [0.05, 0.93],
+    "deltaPerStay": 0.11,
+    "positionFormula": {
+      "centerX": 426,
+      "topY": "300 + 1140 * pow(z, 1.4)",
+      "bottomY": "topY + 44 + 102 * z",
+      "topWidth": "140 + 510 * z",
+      "bottomWidth": "topWidth + 36 + 48 * z"
+    },
+    "sampleSlots": [
+      { "z": 0.05, "topY": 317, "bottomY": 366, "topWidth": 166, "bottomWidth": 204 },
+      { "z": 0.16, "topY": 388, "bottomY": 448, "topWidth": 222, "bottomWidth": 266 },
+      { "z": 0.27, "topY": 482, "bottomY": 554, "topWidth": 278, "bottomWidth": 327 },
+      { "z": 0.38, "topY": 594, "bottomY": 677, "topWidth": 334, "bottomWidth": 389 },
+      { "z": 0.49, "topY": 719, "bottomY": 813, "topWidth": 390, "bottomWidth": 451 },
+      { "z": 0.60, "topY": 857, "bottomY": 962, "topWidth": 446, "bottomWidth": 511 },
+      { "z": 0.71, "topY": 1006, "bottomY": 1122, "topWidth": 502, "bottomWidth": 572 },
+      { "z": 0.82, "topY": 1163, "bottomY": 1291, "topWidth": 558, "bottomWidth": 633 },
+      { "z": 0.93, "topY": 1331, "bottomY": 1470, "topWidth": 614, "bottomWidth": 695 }
+    ]
+  },
+  "content": {
+    "stays": {
+      "unit": "one stay per tile; show number of nights inside the stamp",
+      "clearHistory": {
+        "count": 4,
+        "z": [0.38, 0.49, 0.60, 0.71]
+      },
+      "current": {
+        "z": 0.71,
+        "carInset": [0.30, 0.58]
+      },
+      "future": {
+        "z": [0.05, 0.16, 0.27],
+        "stampOpacity": 0
+      },
+      "pastEcho": {
+        "count": 5,
+        "z": [0.76, 0.87, 0.98, 1.09, 1.20],
+        "opacity": [0.28, 0.20, 0.14, 0.09, 0.05],
+        "readableLabels": 0
+      }
+    },
+    "hotelPads": {
+      "sides": ["left", "right"],
+      "rule": "Each stayed tile owns one hotel pad on the alternating roadside. The pad and hotel use the same z as their tile and travel by the same deltaPerStay.",
+      "centerX": {
+        "left": "426 - bottomWidth / 2 - (48 + 94 * z)",
+        "right": "426 + bottomWidth / 2 + (48 + 94 * z)"
+      },
+      "baselineY": "bottomY - 8",
+      "width": "68 + 112 * z",
+      "height": "width * 0.52",
+      "inset": 0.1
+    },
+    "gate": {
+      "rule": "One road-spanning transparent gate sits at the boundary immediately ahead of the current tile. Its legs land outside the lane on the shoulders.",
+      "between": ["current", "next"],
+      "baselineY": "topY(next)",
+      "width": "bottomWidth(next) * 1.12",
+      "height": "width * 341 / 512",
+      "openClearance": "at least two car heights",
+      "travel": "Gate, tile, hotel pad, stamp, and car all advance by deltaPerStay in the same transition. Do not animate a gate against a stationary tile."
+    }
+  },
+  "renderOrder": [
+    "environment",
+    "far hotel pads and hotels",
+    "far tiles and stamps",
+    "near hotel pads and hotels",
+    "near tiles and stamps",
+    "cars",
+    "gate frame",
+    "UI"
+  ],
+  "transition": {
+    "durationMs": 820,
+    "easing": "cubic-bezier(0.22, 0.72, 0.18, 1)",
+    "rule": "Use interpolated z positions for every moving item. Recycle an item only after it crosses z=1.20; spawn the next future tile at z=0.05."
+  }
+}
