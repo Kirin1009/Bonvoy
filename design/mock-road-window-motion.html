@@ -1,0 +1,157 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>道の窓 — 通り過ぎる検証</title>
+<style>
+:root{--cream:#F4EBD8;--navy:#3A4A6B}
+body{margin:0;background:var(--cream);font-family:'Hiragino Mincho ProN','Yu Mincho',serif}
+.wrap{max-width:390px;margin:0 auto;padding-bottom:18px}
+.hud{display:flex;align-items:center;gap:11px;background:var(--navy);border-radius:14px;padding:10px 14px;color:#F4EBD8;margin:12px 12px 0}
+.hud .n{font-size:26px;font-weight:800;font-family:ui-monospace,monospace;color:#F0D9A6;line-height:1}
+.hud .n small{font-size:11px}
+.hud .s{font-size:10.5px;line-height:1.5;color:#D9CDB8}.hud .s b{color:#F0D9A6}
+.board{width:100%;margin-top:12px;border-radius:16px;overflow:hidden}
+.win{position:relative;width:100%;line-height:0}
+img.base{width:100%;display:block}
+.ov{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+.spr{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 6px 8px rgba(30,20,8,.5))}
+.spr img{width:100%;display:block}
+.cta{margin:12px;padding:13px;border-radius:12px;background:var(--navy);color:#F0D9A6;text-align:center;
+  font-size:14px;font-weight:700;letter-spacing:.1em;cursor:pointer;user-select:none}
+.note{font-size:11px;color:#7A6A55;margin:10px 18px 0;line-height:1.7}
+</style>
+<div class="wrap">
+<div class="hud"><span class="n" id="hn">41<small>泊</small></span>
+<div class="s">2026年・9カ国 15宿<br><b id="hs">プラチナまで あと9泊</b></div></div>
+<div class="board"><div class="win" id="b"><img class="base" src="../assets/world/road-window-grand-highway-unbuilt.webp"></div></div>
+<div class="cta" id="cta">宿泊を記録する</div>
+<p class="note">押すと1滞在ぶん world が手前へ流れます。判子・宿のミニチュア・ゲートが同じ速度で近づき、手前で画面外へ抜けます（アウトラン方式）。</p>
+</div>
+<script>
+const A="../assets/world/", INK="#B63B2E", DEEP="#8E241D";
+const J={"schemaVersion":2,"note":"Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation. Gates are transparent, road-spanning overlays anchored at tile boundaries; never put a gate on top of a tile.","canvas":{"width":852,"height":1515},"base":{"asset":"assets/world/road-window-grand-highway-unbuilt.webp","hotelState":"unbuilt","gateState":"none-baked"},"tiles":[{"id":"near","corners":{"topLeft":[98,1032],"topRight":[753,1032],"bottomRight":[846,1444],"bottomLeft":[5,1444]}},{"id":"current","corners":{"topLeft":[201,751],"topRight":[652,751],"bottomRight":[700,994],"bottomLeft":[154,994]}},{"id":"next","corners":{"topLeft":[263,545],"topRight":[587,545],"bottomRight":[620,705],"bottomLeft":[229,705]}},{"id":"mid","corners":{"topLeft":[308,405],"topRight":[541,405],"bottomRight":[570,516],"bottomLeft":[278,516]}},{"id":"far","corners":{"topLeft":[340,303],"topRight":[510,303],"bottomRight":[530,390],"bottomLeft":[322,390]}}],"gate":{"assetAspect":[512,341],"placement":"Render the asset at the declared width with height:auto. Align its horizontal center to centerX and its bottom edge to baselineY. The transparent opening must leave stamps and pawns visible as they pass under it.","horizon":{"boundary":{"between":["far","mid"]},"centerX":426,"baselineY":397,"width":218,"rotation":0},"near":{"boundary":{"between":["next","current"]},"centerX":426,"baselineY":728,"width":432,"rotation":0},"travel":{"baselineY":[397,728],"width":[218,432],"opacity":[0.58,1.0]}},"pawns":{"shun":{"tile":"current","center":[395,865],"size":[80,106],"rotation":0},"sayano":{"tile":"current","center":[459,865],"size":[63,84],"rotation":0}},"buildingZones":[{"id":"nearLeft","corners":{"topLeft":[86,382],"topRight":[178,382],"bottomRight":[170,434],"bottomLeft":[72,434]}},{"id":"nearRight","corners":{"topLeft":[701,489],"topRight":[805,489],"bottomRight":[817,553],"bottomLeft":[708,553]}},{"id":"midLeft","corners":{"topLeft":[104,289],"topRight":[223,289],"bottomRight":[216,341],"bottomLeft":[93,341]}},{"id":"midRight","corners":{"topLeft":[617,286],"topRight":[728,286],"bottomRight":[738,337],"bottomLeft":[624,337]}},{"id":"farLeft","corners":{"topLeft":[204,235],"topRight":[299,235],"bottomRight":[295,271],"bottomLeft":[200,271]}},{"id":"farRight","corners":{"topLeft":[586,232],"topRight":[686,232],"bottomRight":[691,267],"bottomLeft":[589,267]}}]};
+const W=J.canvas.width, H=J.canvas.height, B=document.getElementById("b");
+
+/* ---- スロット定義。index 0 = 地平線側、増えるほど手前 ---- */
+const cs=c=>[c.topLeft,c.topRight,c.bottomRight,c.bottomLeft];
+const byId=n=>J.tiles.find(t=>t.id===n).corners;
+const TILE=["far","mid","next","current","near"].map(n=>cs(byId(n)));
+/* 手前へ抜けきった位置を外挿（near と current の差をもう一段のばす） */
+TILE.push(TILE[4].map((p,i)=>[p[0]+(TILE[4][i][0]-TILE[3][i][0]), p[1]+(TILE[4][i][1]-TILE[3][i][1])]));
+
+const zone=n=>{const z=J.buildingZones.find(b=>b.id===n).corners;
+  const q=cs(z), xs=q.map(p=>p[0]), ys=q.map(p=>p[1]);
+  return {x:(Math.min(...xs)+Math.max(...xs))/2, y:Math.max(...ys), w:(Math.max(...xs)-Math.min(...xs))*1.5};};
+const LOT={L:["farLeft","midLeft","nearLeft"].map(zone), R:["farRight","midRight","nearRight"].map(zone)};
+/* 画面外へ抜ける位置を外挿 */
+for(const s of ["L","R"]){const a=LOT[s][1], b=LOT[s][2];
+  LOT[s].push({x:b.x+(b.x-a.x)*1.6, y:b.y+(b.y-a.y)*1.9, w:b.w+(b.w-a.w)*1.9});}
+
+const lerp=(a,b,t)=>a+(b-a)*t;
+const lerpQ=(A_,B_,t)=>A_.map((p,i)=>[lerp(p[0],B_[i][0],t), lerp(p[1],B_[i][1],t)]);
+function tileAt(p){                                   /* p は実数スロット位置 */
+  const i=Math.max(0,Math.min(TILE.length-2,Math.floor(p)));
+  return lerpQ(TILE[i],TILE[i+1],p-i);
+}
+function lotAt(side,p){
+  const L=LOT[side], i=Math.max(0,Math.min(L.length-2,Math.floor(p))), t=p-i;
+  return {x:lerp(L[i].x,L[i+1].x,t), y:lerp(L[i].y,L[i+1].y,t), w:lerp(L[i].w,L[i+1].w,t)};
+}
+
+/* ---- データ（Shunの実履歴の直近。新しいものほど地平線側に現れて流れてくる） ---- */
+const STAYS=[
+  {c:"Ｉ",s:"2泊",b:"hotel-generic-luxury-city.webp"},
+  {c:"Ｍ",s:"4泊",b:"hotel-generic-select-city.webp"},
+  {c:"Ｊ",s:"3泊",b:"hotel-generic-premium-city.webp"},
+  {c:"Ｓ",s:"1泊",b:"hotel-generic-premium-resort.webp"},
+  {c:"バ",s:"1泊",b:"hotel-generic-luxury-resort.webp"},
+  {c:"Ｏ",s:"3泊",b:"hotel-generic-select-resort.webp"}
+];
+let head=0;                                            /* 何滞在ぶん流れたか */
+let nights=41;
+
+/* ---- 判子（マスの四隅に沿って描く） ---- */
+let uid=0;
+function sealSVG(st,q){
+  const u="s"+(++uid);
+  const c=[(q[0][0]+q[1][0]+q[2][0]+q[3][0])/4,(q[0][1]+q[1][1]+q[2][1]+q[3][1])/4];
+  const ins=k=>q.map(z=>[c[0]+(z[0]-c[0])*k, c[1]+(z[1]-c[1])*k]);
+  const d=p=>"M"+p.map(z=>z.join(",")).join("L")+"Z";
+  const o=ins(.80), n=ins(.72);
+  const h=Math.abs(q[3][1]-q[0][1]), fs=h*.40;
+  const xs=q.map(p=>p[0]), ys=q.map(p=>p[1]);
+  const bx=Math.min(...xs), by=Math.min(...ys), bw=Math.max(...xs)-bx, bh=Math.max(...ys)-by;
+  return `<defs><clipPath id="${u}c"><path d="${d(o)}"/></clipPath>
+    <mask id="${u}m"><path d="${d(q)}" fill="#fff"/>
+    <image href="${A}stamp-wear-mask.webp" x="${bx}" y="${by}" width="${bw}" height="${bh}" preserveAspectRatio="none" opacity=".85"/></mask></defs>
+    <path d="${d(o)}" fill="${DEEP}" opacity=".14"/>
+    <g filter="url(#sealtex2)" opacity=".95" mask="url(#${u}m)">
+      <path d="${d(o)}" fill="none" stroke="${INK}" stroke-width="${Math.max(h*.030,3)}" stroke-linejoin="round"/>
+      <path d="${d(n)}" fill="none" stroke="${INK}" stroke-width="${Math.max(h*.008,1.2)}"/>
+      <text x="${c[0]}" y="${c[1]+fs*.10}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${INK}"
+        font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${st.c}</text>
+      <text x="${c[0]}" y="${c[1]+fs*.75}" text-anchor="middle" font-size="${fs*.36}" font-weight="600" fill="${INK}"
+        font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${st.s}</text></g>
+    <image href="${A}stamp-ink-mottle.webp" x="${bx}" y="${by}" width="${bw}" height="${bh}"
+      preserveAspectRatio="none" opacity=".28" style="mix-blend-mode:multiply" clip-path="url(#${u}c)"/>`;
+}
+
+function draw(prog){                                   /* prog: 0..1 の途中経過 */
+  [...B.querySelectorAll(".ov,.spr")].forEach(e=>e.remove());
+  let svg="";
+  /* 判子: 滞在i は スロット (3 - i + head + prog) ではなく、
+     「新しいものが地平線側」なので slot = i - head - prog を反転して使う */
+  STAYS.forEach((st,i)=>{
+    const p=(i-head-prog)+1.0;                         /* 0=地平線 ... 5=画面外 */
+    if(p<-0.4||p>4.9) return;
+    svg+=sealSVG(st, tileAt(Math.max(0,p)));
+  });
+  B.insertAdjacentHTML("beforeend",
+    `<svg class="ov" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>
+     <filter id="sealtex2" x="-15%" y="-15%" width="130%" height="130%">
+     <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
+     <feDisplacementMap in="SourceGraphic" scale="1.2"/></filter></defs>${svg}</svg>`);
+
+  /* 宿のミニチュア: 左右交互に、判子と同じ速度で手前へ流れる */
+  STAYS.forEach((st,i)=>{
+    const p=(i-head-prog);
+    if(p<-0.4||p>3.4) return;
+    const L=lotAt(i%2?"R":"L", Math.max(0,p));
+    const e=document.createElement("span"); e.className="spr";
+    e.style.cssText=`left:${L.x/W*100}%;top:${L.y/H*100}%;width:${L.w/W*100}%`;
+    e.innerHTML=`<img src="${A}${st.b}">`; B.appendChild(e);
+  });
+
+  /* ゲート: プラチナまでの残りに応じて地平線から近づく（滞在を刻むほど手前へ） */
+  const g=J.gate, t=Math.min(1,Math.max(0,((nights+prog*2)-25)/(50-25)));
+  const by=lerp(g.travel.baselineY[0],g.travel.baselineY[1],t);
+  const gw=lerp(g.travel.width[0],g.travel.width[1],t);
+  const ge=document.createElement("span"); ge.className="spr";
+  ge.style.cssText=`left:${g.near.centerX/W*100}%;top:${by/H*100}%;width:${gw/W*100}%;`+
+                   `opacity:${lerp(g.travel.opacity[0],g.travel.opacity[1],t)}`;
+  ge.innerHTML=`<img src="${A}gate-platinum-50.webp">`; B.appendChild(ge);
+
+  /* 愛車: 視点そのものなので手前に固定 */
+  const cq=tileAt(4.15), cx=cq[3][0]+(cq[2][0]-cq[3][0])*0.30, cy=(cq[3][1]+cq[2][1])/2;
+  const pe=document.createElement("span"); pe.className="spr";
+  pe.style.cssText=`left:${cx/W*100}%;top:${cy/H*100}%;width:${Math.abs(cq[2][0]-cq[3][0])*0.40/W*100}%`;
+  pe.innerHTML=`<img src="${A}pawn-shun-m3.webp">`; B.appendChild(pe);
+}
+
+let anim=null;
+function step(){
+  if(anim) return;
+  const t0=performance.now(), D=950;
+  const ease=x=>1-Math.pow(1-x,3);
+  anim=requestAnimationFrame(function f(now){
+    const k=Math.min(1,(now-t0)/D);
+    draw(ease(k));
+    if(k<1){ anim=requestAnimationFrame(f); }
+    else{ anim=null; head++; nights+=2;
+      document.getElementById("hn").innerHTML=nights+"<small>泊</small>";
+      document.getElementById("hs").textContent= nights>=50?"プラチナ達成":`プラチナまで あと${50-nights}泊`;
+      draw(0); }
+  });
+}
+document.getElementById("cta").addEventListener("click",step);
+draw(0);
+window.__step=step; window.__draw=draw; window.__ready=true;
+</script>
