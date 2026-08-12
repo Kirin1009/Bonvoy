@@ -1,0 +1,223 @@
+/**
+ * Bonvoyラリー — Googleスプレッドシート同期（F-20）
+ *
+ * 役割: 端末のlocalStorageだけに置いていた宿泊記録を、Shunのワークスペース上の
+ *       スプレッドシートへ二重化する。端末を失っても記録が残ることが最優先。
+ *
+ * 設計:
+ *   - クライアントは action:"sync" で自分の全状態を送る。サーバはシートの内容と
+ *     マージして、マージ後の全状態を返す。クライアントはそれを自分にマージする。
+ *     つまり「どちらか片方にしかない記録は必ず生き残る」。上書き削除はしない。
+ *   - 宿泊は hid + チェックイン日 を一意キーにする（同じ日の同じ宿は1件）。
+ *   - シートは人間が読める表形式。Shunが直接Sheetsで眺めたり直したりできる。
+ *
+ * セットアップ手順は docs/シート同期-セットアップ.md を参照。
+ */
+
+/* ===== 設定 ===== */
+var SHEET_ID = '';          // 同期先スプレッドシートのID（URLの /d/ と /edit の間）
+var TOKEN    = '';          // クライアントと共有する合言葉。空のままにしない
+
+/* ===== シート定義 ===== */
+var TABS = {
+  stays:  ['hid', 'ホテル名', 'チェックイン', '泊数', '価格', 'ポイント利用', 'アップグレード', '獲得ポイント', 'メモ'],
+  hotels: ['hid', 'ホテル名', 'ブランド', '国', 'エリア', '立地'],
+  scores: ['hid', '立地', '部屋', '食事', '施設', 'サービス', 'メモ'],
+  wants:  ['hid', '登録日'],
+  meta:   ['キー', '値']
+};
+
+function doPost(e) {
+  try {
+    var req = JSON.parse(e.postData.contents);
+    if (!TOKEN || req.token !== TOKEN) return json({ ok: false, error: 'bad token' });
+
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var lock = LockService.getScriptLock();
+    lock.waitLock(20000);                       // 端末2台の同時同期で行が壊れるのを防ぐ
+    try {
+      var remote = readState(ss);
+      var merged = (req.action === 'pull') ? remote : mergeState(remote, req.state || {});
+      if (req.action !== 'pull') writeState(ss, merged);
+      return json({ ok: true, state: merged, syncedAt: new Date().toISOString() });
+    } finally {
+      lock.releaseLock();
+    }
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
+}
+
+function doGet() {
+  return json({ ok: true, service: 'bonvoy-sync', note: 'POSTで同期します' });
+}
+
+function json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ===== 読み書き ===== */
+
+function sheetOf(ss, name) {
+  var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(TABS[name]);
+    sh.setFrozenRows(1);
+  } else if (sh.getLastRow() === 0) {
+    sh.appendRow(TABS[name]);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function rowsOf(sh) {
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  return sh.getRange(2, 1, last - 1, sh.getLastColumn()).getValues();
+}
+
+function asDate(v) {                            // シート上で日付型になっていても文字列に戻す
+  if (v instanceof Date) return Utilities.formatDate(v, 'JST', 'yyyy-MM-dd');
+  return String(v || '').trim();
+}
+
+function num(v) { return (v === '' || v === null || v === undefined) ? undefined : Number(v); }
+function bool(v) { return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1'; }
+
+function readState(ss) {
+  var st = { stays: {}, hotels: {}, scores: {}, wants: {}, radius: 800, car: 'm3' };
+
+  rowsOf(sheetOf(ss, 'stays')).forEach(function (r) {
+    var hid = String(r[0] || '').trim(), d = asDate(r[2]);
+    if (!hid || !d) return;
+    var s = { d: d, n: num(r[3]) || 1 };
+    if (num(r[4]) !== undefined) s.price = num(r[4]);
+    if (bool(r[5])) s.pts = true;
+    if (bool(r[6])) s.upg = true;
+    if (num(r[7]) !== undefined) s.earn = num(r[7]);
+    if (String(r[8] || '').trim()) s.memo = String(r[8]).trim();
+    (st.stays[hid] = st.stays[hid] || []).push(s);
+  });
+
+  rowsOf(sheetOf(ss, 'hotels')).forEach(function (r) {
+    var hid = String(r[0] || '').trim(); if (!hid) return;
+    st.hotels[hid] = {
+      name: String(r[1] || ''), brand: String(r[2] || ''),
+      country: String(r[3] || ''), city: String(r[4] || ''), loc: String(r[5] || 'city')
+    };
+  });
+
+  rowsOf(sheetOf(ss, 'scores')).forEach(function (r) {
+    var hid = String(r[0] || '').trim(); if (!hid) return;
+    var sc = {};
+    ['loc', 'room', 'meal', 'fac', 'svc'].forEach(function (k, i) {
+      if (num(r[i + 1]) !== undefined) sc[k] = num(r[i + 1]);
+    });
+    if (String(r[6] || '').trim()) sc.memo = String(r[6]).trim();
+    st.scores[hid] = sc;
+  });
+
+  rowsOf(sheetOf(ss, 'wants')).forEach(function (r) {
+    var hid = String(r[0] || '').trim(); if (!hid) return;
+    st.wants[hid] = asDate(r[1]);
+  });
+
+  rowsOf(sheetOf(ss, 'meta')).forEach(function (r) {
+    var k = String(r[0] || '').trim();
+    if (k === 'radius') st.radius = Number(r[1]) || 800;
+    if (k === 'car') st.car = String(r[1] || 'm3');
+  });
+
+  return st;
+}
+
+/**
+ * マージ規則:
+ *   stays  — hid + チェックイン日 の和集合。両方にある場合はローカル側を採る
+ *            （手元で泊数や価格を直した直後の同期を尊重するため）
+ *   hotels / scores / wants — 和集合。両方にある場合はローカル側
+ *   radius / car — ローカル側（端末ごとの好み）
+ * どの規則でも「片方にしかない記録が消える」ことはない。
+ */
+function mergeState(remote, local) {
+  var out = { stays: {}, hotels: {}, scores: {}, wants: {},
+              radius: local.radius || remote.radius || 800,
+              car: local.car || remote.car || 'm3' };
+
+  var hids = {};
+  Object.keys(remote.stays || {}).forEach(function (h) { hids[h] = 1; });
+  Object.keys(local.stays  || {}).forEach(function (h) { hids[h] = 1; });
+
+  Object.keys(hids).forEach(function (hid) {
+    var byDate = {};
+    (remote.stays[hid] || []).forEach(function (s) { if (s && s.d) byDate[s.d] = s; });
+    (local.stays[hid]  || []).forEach(function (s) { if (s && s.d) byDate[s.d] = s; });
+    var list = Object.keys(byDate).sort().map(function (d) { return byDate[d]; });
+    if (list.length) out.stays[hid] = list;
+  });
+
+  ['hotels', 'scores', 'wants'].forEach(function (k) {
+    var m = {};
+    Object.keys(remote[k] || {}).forEach(function (h) { m[h] = remote[k][h]; });
+    Object.keys(local[k]  || {}).forEach(function (h) { m[h] = local[k][h]; });
+    out[k] = m;
+  });
+
+  return out;
+}
+
+function writeState(ss, st) {
+  var rows;
+
+  rows = [];
+  Object.keys(st.stays).sort().forEach(function (hid) {
+    st.stays[hid].forEach(function (s) {
+      rows.push([hid, (st.hotels[hid] || {}).name || '', s.d, s.n || 1,
+                 s.price === undefined ? '' : s.price, s.pts ? 'TRUE' : '',
+                 s.upg ? 'TRUE' : '', s.earn === undefined ? '' : s.earn, s.memo || '']);
+    });
+  });
+  replaceRows(sheetOf(ss, 'stays'), rows);
+
+  rows = Object.keys(st.hotels).sort().map(function (hid) {
+    var h = st.hotels[hid];
+    return [hid, h.name || '', h.brand || '', h.country || '', h.city || '', h.loc || 'city'];
+  });
+  replaceRows(sheetOf(ss, 'hotels'), rows);
+
+  rows = Object.keys(st.scores).sort().map(function (hid) {
+    var s = st.scores[hid] || {};
+    return [hid, s.loc || '', s.room || '', s.meal || '', s.fac || '', s.svc || '', s.memo || ''];
+  });
+  replaceRows(sheetOf(ss, 'scores'), rows);
+
+  rows = Object.keys(st.wants).sort().map(function (hid) { return [hid, st.wants[hid] || '']; });
+  replaceRows(sheetOf(ss, 'wants'), rows);
+
+  replaceRows(sheetOf(ss, 'meta'), [
+    ['radius', st.radius], ['car', st.car],
+    ['最終同期', Utilities.formatDate(new Date(), 'JST', 'yyyy-MM-dd HH:mm:ss')],
+    ['宿泊件数', Object.keys(st.stays).reduce(function (a, h) { return a + st.stays[h].length; }, 0)],
+    ['通算泊数', Object.keys(st.stays).reduce(function (a, h) {
+      return a + st.stays[h].reduce(function (b, s) { return b + (s.n || 1); }, 0); }, 0)]
+  ]);
+}
+
+function replaceRows(sh, rows) {
+  var last = sh.getLastRow();
+  if (last > 1) sh.getRange(2, 1, last - 1, sh.getLastColumn()).clearContent();
+  if (rows.length) {
+    sh.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
+  }
+}
+
+/* ===== 動作確認用（エディタから実行する） ===== */
+function testReadWrite() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var st = readState(ss);
+  Logger.log('宿: %s件 / 宿泊: %s件', Object.keys(st.hotels).length, Object.keys(st.stays).length);
+  writeState(ss, st);
+  Logger.log('書き戻し完了');
+}

@@ -1,0 +1,49 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;background:#F4EBD8;font-family:'Hiragino Mincho ProN',serif}
+.wrap{max-width:390px;margin:0 auto}
+.board{position:relative;width:100%}
+.board img{width:100%;display:block}
+.st{position:absolute;transform:translate(-50%,-50%)}
+.st svg{display:block;width:100%;height:auto}
+</style>
+<div class="wrap"><div class="board" id="b"><img src="proposals/road-window-grand-highway.webp"></div></div>
+<svg width="0" height="0"><defs>
+<filter id="sealtex2" x="-15%" y="-15%" width="130%" height="130%">
+<feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
+<feDisplacementMap in="SourceGraphic" scale="1.2"/></filter>
+</defs></svg>
+<script>
+const INK="#B63B2E", DEEP="#8E241D";
+/* 実測スロット（852x1515基準）: 中心x,y・幅・高さ */
+const SLOTS=[
+ {id:"far",     cx:408, cy:368,  w:250, h:76},
+ {id:"mid",     cx:418, cy:470,  w:330, h:119},
+ {id:"next",    cx:415, cy:626,  w:400, h:184},
+ {id:"current", cx:430, cy:872,  w:510, h:233},
+ {id:"near",    cx:426, cy:1239, w:700, h:404}];
+let uid=0;
+function seal(ch,s){
+ const u="s"+(++uid), a=s.w*0.40, b=s.h*0.40;
+ const rx=Math.min(a,b)*0.34, fs=Math.min(a,b)*1.25;
+ const O=`<rect x="${-a}" y="${-b}" width="${a*2}" height="${b*2}" rx="${rx}"`;
+ const I=`<rect x="${-a+7}" y="${-b+7}" width="${(a-7)*2}" height="${(b-7)*2}" rx="${Math.max(rx-5,3)}"`;
+ return `<svg viewBox="${-(a+8)} ${-(b+8)} ${(a+8)*2} ${(b+8)*2}">
+ <defs><mask id="${u}m"><rect x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" fill="#fff"/>
+ <image href="../assets/world/stamp-wear-mask.webp" x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" preserveAspectRatio="none" opacity=".85"/></mask></defs>
+ <g opacity=".15">${O} fill="${DEEP}"/></g>
+ <g filter="url(#sealtex2)" opacity=".95" mask="url(#${u}m)">
+ ${O} fill="none" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+ ${I} fill="none" stroke="${INK}" stroke-width="1.6"/>
+ <text y="${fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${INK}">${ch}</text></g></svg>`;
+}
+const chars=["バ","S","J","M","W"];
+const B=document.getElementById("b");
+SLOTS.forEach((s,i)=>{
+ const el=document.createElement("span");
+ el.className="st";
+ el.style.cssText=`left:${s.cx/852*100}%;top:${s.cy/1515*100}%;width:${(s.w*0.80+16)/852*100}%`;
+ el.innerHTML=seal(chars[i],s);
+ B.appendChild(el);
+});
+</script>

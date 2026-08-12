@@ -1,0 +1,132 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A案 正式ベース検証</title>
+<style>
+:root{--cream:#F4EBD8;--navy:#3A4A6B}
+body{margin:0;background:var(--cream);font-family:'Hiragino Mincho ProN','Yu Mincho',serif}
+.wrap{max-width:390px;margin:0 auto;padding-bottom:18px}
+h1{font-size:19px;letter-spacing:.22em;margin:14px 18px 2px;color:#2E241A}
+.sub{font-size:11px;color:#7A6A55;margin:0 18px 10px;line-height:1.6}
+.hud{display:flex;align-items:center;gap:11px;background:var(--navy);border-radius:14px;padding:10px 14px;color:#F4EBD8;margin:0 12px}
+.hud .n{font-size:26px;font-weight:800;font-family:ui-monospace,monospace;color:#F0D9A6;line-height:1}
+.hud .n small{font-size:11px}.hud .s{font-size:10.5px;line-height:1.5;color:#D9CDB8}.hud .s b{color:#F0D9A6}
+.board{width:100%;margin-top:12px;border-radius:16px;overflow:hidden}
+.win{position:relative;width:100%;line-height:0}
+img.base{width:100%;display:block}
+.past{position:relative;width:100%;line-height:0;background:linear-gradient(180deg,#C8A17C 0%,#A9835F 42%,#6E5540 78%,#4A3B2E 100%)}
+.past svg{width:100%;display:block}
+.ov{position:absolute;inset:0;width:100%;height:100%}
+.spr{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 6px 8px rgba(30,20,8,.5))}
+.spr img{width:100%;display:block}
+.cta{margin:12px;padding:13px;border-radius:12px;background:var(--navy);color:#F0D9A6;text-align:center;font-size:14px;font-weight:700;letter-spacing:.1em}
+</style>
+<div class="wrap">
+<h1>Bonvoyラリー</h1><p class="sub">世界中のBonvoyホテルを泊まり歩く旅の台帳。</p>
+<div class="hud"><span class="n">41<small>泊</small></span>
+<div class="s">2026年・9カ国 15宿（通算41泊）<br><b>プラチナまで あと9泊</b></div></div>
+<div class="board"><div class="win" id="b"><img class="base" src="../assets/world/road-window-grand-highway-unbuilt.webp"></div><div class="past" id="past"></div></div>
+<div class="cta">宿泊を記録する</div>
+</div>
+<script>
+const A="../assets/world/", INK="#B63B2E", DEEP="#8E241D";
+const STAYS=(new URLSearchParams(location.search).get("n")==="2")
+   ? [{c:"Ｍ",s:"4泊"},{c:"Ｉ",s:"2泊"}]                                      /* 契約どおり: near+currentのみ */
+   : [{c:"Ｓ",s:"1泊"},{c:"Ｊ",s:"3泊"},{c:"Ｍ",s:"4泊"},{c:"Ｉ",s:"2泊"}];   /* 4マス案 */
+const BLDS=["hotel-generic-luxury-city.webp","hotel-generic-premium-city.webp","hotel-generic-select-city.webp",
+            "hotel-generic-premium-resort.webp","hotel-generic-luxury-resort.webp"];
+const __J={"schemaVersion":2,"note":"Grand Highway unbuilt and gateless fixed-window contract. Coordinates are natural pixels on the 852 x 1515 base. Draw all hotel stamps and other affine overlays by the four corners, not a center/rectangle approximation. Gates are transparent, road-spanning overlays anchored at tile boundaries; never put a gate on top of a tile.","canvas":{"width":852,"height":1515},"base":{"asset":"assets/world/road-window-grand-highway-unbuilt.webp","hotelState":"unbuilt","gateState":"none-baked"},"tiles":[{"id":"near","corners":{"topLeft":[98,1032],"topRight":[753,1032],"bottomRight":[846,1444],"bottomLeft":[5,1444]}},{"id":"current","corners":{"topLeft":[201,751],"topRight":[652,751],"bottomRight":[700,994],"bottomLeft":[154,994]}},{"id":"next","corners":{"topLeft":[263,545],"topRight":[587,545],"bottomRight":[620,705],"bottomLeft":[229,705]}},{"id":"mid","corners":{"topLeft":[308,405],"topRight":[541,405],"bottomRight":[570,516],"bottomLeft":[278,516]}},{"id":"far","corners":{"topLeft":[340,303],"topRight":[510,303],"bottomRight":[530,390],"bottomLeft":[322,390]}}],"gate":{"assetAspect":[512,341],"placement":"Render the asset at the declared width with height:auto. Align its horizontal center to centerX and its bottom edge to baselineY. The transparent opening must leave stamps and pawns visible as they pass under it.","horizon":{"boundary":{"between":["far","mid"]},"centerX":426,"baselineY":397,"width":218,"rotation":0},"near":{"boundary":{"between":["next","current"]},"centerX":426,"baselineY":728,"width":432,"rotation":0},"travel":{"baselineY":[397,728],"width":[218,432],"opacity":[0.58,1.0]}},"pawns":{"shun":{"tile":"current","center":[395,865],"size":[80,106],"rotation":0},"sayano":{"tile":"current","center":[459,865],"size":[63,84],"rotation":0}},"buildingZones":[{"id":"nearLeft","corners":{"topLeft":[86,382],"topRight":[178,382],"bottomRight":[170,434],"bottomLeft":[72,434]}},{"id":"nearRight","corners":{"topLeft":[701,489],"topRight":[805,489],"bottomRight":[817,553],"bottomLeft":[708,553]}},{"id":"midLeft","corners":{"topLeft":[104,289],"topRight":[223,289],"bottomRight":[216,341],"bottomLeft":[93,341]}},{"id":"midRight","corners":{"topLeft":[617,286],"topRight":[728,286],"bottomRight":[738,337],"bottomLeft":[624,337]}},{"id":"farLeft","corners":{"topLeft":[204,235],"topRight":[299,235],"bottomRight":[295,271],"bottomLeft":[200,271]}},{"id":"farRight","corners":{"topLeft":[586,232],"topRight":[686,232],"bottomRight":[691,267],"bottomLeft":[589,267]}}]};
+(J=>{
+ const W=J.canvas.width, H=J.canvas.height, B=document.getElementById("b");
+ const cs=c=>[c.topLeft,c.topRight,c.bottomRight,c.bottomLeft];
+ const cen=p=>[p.reduce((a,q)=>a+q[0],0)/4, p.reduce((a,q)=>a+q[1],0)/4];
+ const inset=(p,k)=>{const[cx,cy]=cen(p);return p.map(q=>[cx+(q[0]-cx)*k, cy+(q[1]-cy)*k]);};
+ const d=p=>"M"+p.map(q=>q.join(",")).join("L")+"Z";
+ let s="";
+ /* 判子: マスの四隅に沿って描く（矩形近似しない） */
+ /* J.tiles は near→far。手前=古い、奥へ行くほど新しい。奥の余りは未来の空マス */
+ J.tiles.forEach((t,i)=>{
+  const st=STAYS[i]; if(!st) return;
+  const q=cs(t.corners), o=inset(q,.80), n=inset(q,.72), [cx,cy]=cen(q);
+  const h=Math.abs(q[3][1]-q[0][1]), fs=h*.40, u="t"+i;
+  s+=`<defs><clipPath id="${u}c"><path d="${d(o)}"/></clipPath>
+   <mask id="${u}m"><path d="${d(q)}" fill="#fff"/>
+   <image href="${A}stamp-wear-mask.webp" x="${Math.min(...q.map(p=>p[0]))}" y="${Math.min(...q.map(p=>p[1]))}"
+    width="${Math.max(...q.map(p=>p[0]))-Math.min(...q.map(p=>p[0]))}" height="${Math.max(...q.map(p=>p[1]))-Math.min(...q.map(p=>p[1]))}"
+    preserveAspectRatio="none" opacity=".85"/></mask></defs>
+   <path d="${d(o)}" fill="${DEEP}" opacity=".14"/>
+   <g filter="url(#sealtex2)" opacity=".95" mask="url(#${u}m)">
+    <path d="${d(o)}" fill="none" stroke="${INK}" stroke-width="${Math.max(h*.030,4)}" stroke-linejoin="round"/>
+    <path d="${d(n)}" fill="none" stroke="${INK}" stroke-width="${Math.max(h*.008,1.4)}"/>
+    <text x="${cx}" y="${cy+fs*.10}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${INK}"
+     font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${st.c}</text>
+    <text x="${cx}" y="${cy+fs*.75}" text-anchor="middle" font-size="${fs*.36}" font-weight="600" fill="${INK}"
+     font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${st.s}</text></g>
+   <image href="${A}stamp-ink-mottle.webp" x="${Math.min(...q.map(p=>p[0]))}" y="${Math.min(...q.map(p=>p[1]))}"
+    width="${Math.max(...q.map(p=>p[0]))-Math.min(...q.map(p=>p[0]))}" height="${Math.max(...q.map(p=>p[1]))-Math.min(...q.map(p=>p[1]))}"
+    preserveAspectRatio="none" opacity=".28" style="mix-blend-mode:multiply" clip-path="url(#${u}c)"/>`;
+ });
+ B.insertAdjacentHTML("beforeend",
+  `<svg class="ov" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs>
+   <filter id="sealtex2" x="-15%" y="-15%" width="130%" height="130%">
+   <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
+   <feDisplacementMap in="SourceGraphic" scale="1.2"/></filter></defs>${s}</svg>`);
+ /* ホテルミニチュア: 区画に8%インセットで収める */
+ J.buildingZones.forEach((z,i)=>{
+  if(!BLDS[i]) return;
+  const q=cs(z.corners), xs=q.map(p=>p[0]), ys=q.map(p=>p[1]);
+  const w=(Math.max(...xs)-Math.min(...xs))*1.5, bx=(Math.min(...xs)+Math.max(...xs))/2, by=Math.max(...ys);
+  const e=document.createElement("span"); e.className="spr";
+  e.style.cssText=`left:${bx/W*100}%;top:${by/H*100}%;width:${w/W*100}%`;
+  e.innerHTML=`<img src="${A}${BLDS[i]}">`; B.appendChild(e);
+ });
+ /* ゲート: 契約v2。baselineY(下端)とwidthだけを補間し、高さは素材比から出す。
+    プラチナ(50泊)へ 41/50 → 25泊起点で64%地点に接近中。 */
+ (function(){
+  const g=J.gate, t=(41-25)/(50-25);
+  const lerp=(a,b)=>a+(b-a)*t;
+  const by=lerp(g.travel.baselineY[0], g.travel.baselineY[1]);
+  const gw=lerp(g.travel.width[0],     g.travel.width[1]);
+  const gh=gw*(g.assetAspect[1]/g.assetAspect[0]);
+  const ge=document.createElement("span"); ge.className="spr";
+  ge.style.cssText=`left:${g.near.centerX/W*100}%;top:${by/H*100}%;width:${gw/W*100}%;opacity:${lerp(g.travel.opacity[0],g.travel.opacity[1])}`;
+  ge.innerHTML=`<img src="${A}gate-platinum-50.webp">`; B.appendChild(ge);
+ })();
+ /* 愛車: 契約v2の pawns（currentタイル内） */
+ (function(){
+  const p=J.pawns.shun, pe=document.createElement("span"); pe.className="spr";
+  pe.style.cssText=`left:${p.center[0]/W*100}%;top:${(p.center[1]+p.size[1]/2)/H*100}%;width:${p.size[0]*2.0/W*100}%`;
+  pe.innerHTML=`<img src="${A}pawn-shun-m3.webp">`; B.appendChild(pe);
+ })();
+ /* ===== 過ぎてきた道: 手前へ丸く落ち込む薄いマス（可読性は不要） ===== */
+ (function(){
+  const PW=852, N=6, PH=420;                       /* 6マス分 */
+  const nq=cs(J.tiles[0].corners);                 /* near タイル＝直近の過去 */
+  const bl=nq[3], br=nq[2];                        /* 下辺 */
+  const OLD=["Ｇ","Ｏ","バ","バ","Ｃ","Ｒ"];        /* さらに過去の宿（薄く） */
+  let y=0, halfW=(br[0]-bl[0])/2, cx=(bl[0]+br[0])/2, out="";
+  for(let i=0;i<N;i++){
+   const t=(i+1)/N;
+   const step=PH*(0.30-0.035*i)/(1-0.10*i);        /* 手前ほど圧縮＝縁を越えて落ちる */
+   const shrink=1-0.12*(i+1);                      /* 縁の丸みで幅も詰まる */
+   const y2=Math.min(y+step,PH), hw2=halfW*shrink;
+   const q=[[cx-halfW,y],[cx+halfW,y],[cx+hw2,y2],[cx-hw2,y2]];
+   const op=Math.max(0.62-0.078*i,0.10);
+   const ins=(p,k)=>{const ccx=(p[0][0]+p[1][0]+p[2][0]+p[3][0])/4,ccy=(p[0][1]+p[1][1]+p[2][1]+p[3][1])/4;
+     return p.map(z=>[ccx+(z[0]-ccx)*k, ccy+(z[1]-ccy)*k]);};
+   const dd=p=>"M"+p.map(z=>z.join(",")).join("L")+"Z";
+   out+=`<path d="${dd(q)}" fill="#EFE2CE" opacity="${op*0.85}"/>
+    <path d="${dd(ins(q,.90))}" fill="none" stroke="#C09A55" stroke-width="${Math.max(3-i*0.35,1)}" opacity="${op*0.9}"/>
+    <path d="${dd(ins(q,.78))}" fill="none" stroke="${INK}" stroke-width="${Math.max(5-i*0.7,1.2)}" stroke-linejoin="round" opacity="${op*0.8}"/>`;
+   if(i<3){ const cy3=(y+y2)/2, fs=(y2-y)*0.52;
+    out+=`<text x="${cx}" y="${cy3+fs*0.32}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${INK}"
+     opacity="${op*0.62}" font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${OLD[i]}</text>`; }
+   halfW=hw2; y=y2; if(y>=PH) break;
+  }
+  document.getElementById("past").innerHTML=
+   `<svg viewBox="0 0 ${PW} ${PH}" preserveAspectRatio="none">${out}
+    <rect x="0" y="0" width="${PW}" height="${PH}" fill="url(#fade)"/>
+    <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#3A2C1E" stop-opacity="0"/><stop offset=".6" stop-color="#3A2C1E" stop-opacity=".18"/><stop offset="1" stop-color="#2A2016" stop-opacity=".62"/></linearGradient></defs></svg>`;
+ })();
+ window.__ready=true;
+})(__J);
+</script>
