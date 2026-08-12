@@ -178,6 +178,19 @@
       <select id="carSel" class="selbox"><option value="m3">紫のM3ツーリング（俊）</option><option value="220">緑の220クーペ（紗也乃）</option></select>
     </div>
     <div class="sect">
+      <div class="eyebrow">スプレッドシート同期</div>
+      <p class="settext" id="syncState">未設定です。記録はこの端末にしかありません。</p>
+      <div class="formrow"><label>同期URL（Apps Scriptのウェブアプリ）</label>
+        <input type="url" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
+      <div class="formrow"><label>合言葉</label>
+        <input type="password" id="syncTok" placeholder="Code.gs の TOKEN と同じ文字列"></div>
+      <div class="fbtnrow">
+        <button class="btn primary" onclick="window.__syncNow()">いま同期する</button>
+        <button class="btn" onclick="window.__syncSave()">設定を保存</button>
+      </div>
+      <p class="settext">記録は端末とシートの両方に残ります。同期は<b>足し算だけ</b>で、どちらか片方にしかない宿泊が消えることはありません。</p>
+    </div>
+    <div class="sect">
       <div class="eyebrow">バックアップ / 取り込み</div>
       <textarea id="bkarea" class="bkarea" placeholder="ここにバックアップJSONを表示/貼り付け"></textarea>
       <div class="fbtnrow">
@@ -208,7 +221,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.1.0";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -421,7 +434,7 @@ let state={stays:{}, hotels:{}, scores:{}, wants:{}, radius:800, car:"m3"};
 for(const k of ["stays","hotels","scores","wants"]) if(!state[k]) state[k]={};
 reindex();
 try{ if(!localStorage.getItem(KEY2)) localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}  /* v1→v2移行を即時確定 */
-const save=()=>{ try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } };
+const save=()=>{ try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } syncSoon(); };
 
 /* 宿情報の解決: シード or ユーザー生成 */
 const CONTINENT={"日本":"アジア","タイ":"アジア","ベトナム":"アジア","シンガポール":"アジア","中国":"アジア","バングラデシュ":"アジア","インド":"アジア","韓国":"アジア","台湾":"アジア","香港":"アジア","マレーシア":"アジア","インドネシア":"アジア","フィリピン":"アジア","カンボジア":"アジア","ラオス":"アジア","UAE":"中東","カタール":"中東","ドイツ":"ヨーロッパ","イタリア":"ヨーロッパ","イギリス":"ヨーロッパ","フランス":"ヨーロッパ","スペイン":"ヨーロッパ","スイス":"ヨーロッパ","オーストリア":"ヨーロッパ","オランダ":"ヨーロッパ","ポルトガル":"ヨーロッパ","ギリシャ":"ヨーロッパ","アメリカ":"北米","カナダ":"北米","メキシコ":"北米","ブラジル":"南米","オーストラリア":"オセアニア","ニュージーランド":"オセアニア","エジプト":"アフリカ","モロッコ":"アフリカ","南アフリカ":"アフリカ"};
@@ -645,7 +658,8 @@ const qcard=(q,p,extra)=>`<button class="qcard${p.full?" done":""}" data-q="${q.
 function render(){
   document.getElementById("edition").textContent=EDITION;
   document.getElementById("verNote").textContent=
-    `Bonvoyラリー v${APP_VERSION}。世界中のBonvoy宿泊を記録できます（シード${HOTELS.length}軒収録・${EDITION}）。記録はこの端末に保存されます。`;
+    `Bonvoyラリー v${APP_VERSION}。世界中のBonvoy宿泊を記録できます（シード${HOTELS.length}軒収録・${EDITION}）。`+
+    ((state.sync||{}).url?"記録はこの端末とスプレッドシートの両方に保存されます。":"記録はこの端末にのみ保存されます。消えると戻せないので、スプレッドシート同期の設定をおすすめします。");
   const n=uniq(stayList().map(s=>s.hid)).length;
   document.getElementById("total").innerHTML=`${totalNights()}<span style="font-size:10px">泊</span>・${n}<span style="font-size:10px">宿</span>`;
   if(curTab==="world") renderWorld();
@@ -976,10 +990,70 @@ radEl.addEventListener("input",()=>{ state.radius=+radEl.value; radLabel(); save
 document.getElementById("carSel").value=state.car||"m3";
 document.getElementById("carSel").addEventListener("change",e=>{ state.car=e.target.value; save(); render(); });
 
+/* ---------- スプレッドシート同期（F-20） ----------
+   端末のlocalStorageだけだと消えたら終わりなので、Apps Script経由でシートへ二重化する。
+   マージは足し算のみ（サーバ側 mergeState と同じ規則）。同期で記録が減ることはない。 */
+let syncT, syncing=false;
+const syncCfg=()=>state.sync||{};
+function syncStateText(){
+  const el=document.getElementById("syncState"); if(!el) return;
+  const c=syncCfg();
+  el.textContent = !c.url ? "未設定です。記録はこの端末にしかありません。"
+    : c.at ? `最終同期: ${c.at.replace("T"," ").slice(0,16)}`
+    : "設定済み。まだ一度も同期していません。";
+}
+function mergeIn(remote){                          /* サーバから返った全状態を手元へ足す */
+  if(!remote||typeof remote!=="object") return 0;
+  let added=0;
+  for(const hid in (remote.stays||{})){
+    const cur=state.stays[hid]||(state.stays[hid]=[]);
+    const seen=new Set(cur.map(s=>s.d));
+    remote.stays[hid].forEach(s=>{ if(s&&s.d&&!seen.has(s.d)){ cur.push(s); seen.add(s.d); added++; } });
+    cur.sort((a,b)=>a.d<b.d?-1:1);
+  }
+  for(const k of ["hotels","scores","wants"])
+    for(const hid in (remote[k]||{})) if(!state[k][hid]) state[k][hid]=remote[k][hid];
+  return added;
+}
+async function syncNow(quiet){
+  const c=syncCfg();
+  if(!c.url||!c.token){ if(!quiet) notify("同期URLと合言葉を入れて「設定を保存」してください。","err"); return; }
+  if(syncing) return;
+  syncing=true;
+  try{
+    const {sync,...body}=state;                    /* 合言葉はシートへ送らない */
+    const res=await fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({action:"sync",token:c.token,state:body})});
+    const j=await res.json();
+    if(!j.ok) throw new Error(j.error||"同期に失敗しました");
+    const added=mergeIn(j.state);
+    state.sync={...c, at:j.syncedAt||new Date().toISOString()};
+    try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}
+    reindex(); render(); syncStateText();
+    if(!quiet) notify(added?`同期しました（シートから${added}件を取り込み）。`:"同期しました。");
+  }catch(e){
+    if(!quiet) notify("同期できませんでした: "+e.message,"err");
+  }finally{ syncing=false; }
+}
+function syncSoon(){                                /* 記録を触ったら少し待って自動同期 */
+  if(!syncCfg().url) return;
+  clearTimeout(syncT); syncT=setTimeout(()=>syncNow(true),5000);
+}
+window.__syncSave=()=>{
+  const url=document.getElementById("syncUrl").value.trim();
+  const token=document.getElementById("syncTok").value.trim();
+  if(url&&!/^https:\/\/script\.google\.com\//.test(url)){ notify("Apps ScriptのウェブアプリURLを入れてください。","err"); return; }
+  state.sync={url,token,at:syncCfg().at};
+  try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}
+  syncStateText(); notify(url?"同期設定を保存しました。":"同期設定を消しました。");
+};
+window.__syncNow=()=>syncNow(false);
+
 /* ---------- バックアップ / 履歴取り込み ---------- */
 window.__backupOut=()=>{
   const ta=document.getElementById("bkarea");
-  ta.value=JSON.stringify(state); ta.select();
+  const {sync,...body}=state;                       /* 合言葉をバックアップに載せない */
+  ta.value=JSON.stringify(body); ta.select();
   try{ document.execCommand("copy"); notify("バックアップJSONをコピーしました。"); }catch(e){ notify("表示したJSONを手動でコピーしてください。"); }
 };
 window.__backupIn=()=>{
@@ -988,7 +1062,9 @@ window.__backupIn=()=>{
     const obj=JSON.parse(ta.value);
     if(!obj||typeof obj!=="object"||!obj.stays) throw 0;
     if(!confirm("現在の記録をこのJSONで置き換えます。よろしいですか？")) return;
+    const keep=state.sync;                          /* 同期設定は取り込みで消さない */
     state=Object.assign({stays:{},hotels:{},scores:{},wants:{},radius:800,car:"m3"},obj);
+    if(keep) state.sync=keep;
     save(); render(); notify("取り込みました。");
   }catch(e){ notify("JSONを解釈できませんでした。","err"); }
 };
@@ -1028,6 +1104,12 @@ window.__importShun=()=>{
 };
 
 render(); switchTab("world");
+(function initSync(){                               /* 起動時に一度だけ静かに同期 */
+  const c=syncCfg(); if(!c.url) { syncStateText(); return; }
+  document.getElementById("syncUrl").value=c.url||"";
+  document.getElementById("syncTok").value=c.token||"";
+  syncStateText(); syncNow(true);
+})();
 if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v="+APP_VERSION).catch(()=>{});
 
 </script>
