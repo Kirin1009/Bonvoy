@@ -1,0 +1,88 @@
+<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A案モック</title>
+<style>
+:root{--cream:#F4EBD8;--navy:#3A4A6B;--gold:#C7973F;--mid:#5B4A38}
+body{margin:0;background:var(--cream);font-family:'Hiragino Mincho ProN','Yu Mincho',serif}
+.wrap{max-width:390px;margin:0 auto;padding:0 0 20px}
+h1{font-size:19px;letter-spacing:.22em;margin:14px 18px 2px;color:#2E241A}
+.sub{font-size:11px;color:#7A6A55;margin:0 18px 10px;line-height:1.6}
+.hud{display:flex;align-items:center;gap:11px;background:var(--navy);border-radius:14px;padding:10px 14px;color:#F4EBD8;margin:0 12px}
+.hud .n{font-size:26px;font-weight:800;font-family:ui-monospace,monospace;color:#F0D9A6;line-height:1}
+.hud .n small{font-size:11px}
+.hud .s{font-size:10.5px;line-height:1.5;color:#D9CDB8}
+.hud .s b{color:#F0D9A6}
+.board{position:relative;width:100%;margin-top:12px;border-radius:16px;overflow:hidden}
+.board>img.base{width:100%;display:block}
+.st{position:absolute;transform:translate(-50%,-50%)}
+.st svg{display:block;width:100%;height:auto}
+.bld{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 6px 8px rgba(30,20,8,.5))}
+.car{position:absolute;transform:translate(-50%,-88%);filter:drop-shadow(0 5px 7px rgba(30,20,8,.5))}
+.gate{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 5px 10px rgba(30,20,8,.4))}
+.cap{font-size:11px;color:#7A6A55;margin:8px 18px 0;line-height:1.6}
+.cta{margin:12px;padding:13px;border-radius:12px;background:var(--navy);color:#F0D9A6;text-align:center;font-size:14px;font-weight:700;letter-spacing:.1em}
+</style>
+<div class="wrap">
+<h1>Bonvoyラリー</h1>
+<p class="sub">世界中のBonvoyホテルを泊まり歩く旅の台帳。</p>
+<div class="hud"><span class="n">41<small>泊</small></span>
+<div class="s">2026年・9カ国 15宿（通算41泊）<br><b>プラチナまで あと9泊</b></div></div>
+<div class="board" id="b"><img class="base" src="proposals/road-window-grand-highway.webp"></div>
+<div class="cta">宿泊を記録する</div>
+<p class="cap" id="cap"></p>
+</div>
+<svg width="0" height="0"><defs>
+<filter id="sealtex2" x="-15%" y="-15%" width="130%" height="130%">
+<feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
+<feDisplacementMap in="SourceGraphic" scale="1.2"/></filter></defs></svg>
+<script>
+const A="../assets/world/";
+const INK="#B63B2E", DEEP="#8E241D";
+const SLOTS=[ /* ココ実測（852x1515） */
+ {id:"far",     cx:408, cy:368,  w:250, h:76},
+ {id:"mid",     cx:418, cy:470,  w:330, h:119},
+ {id:"next",    cx:415, cy:626,  w:400, h:184},
+ {id:"current", cx:430, cy:872,  w:510, h:233},
+ {id:"near",    cx:426, cy:1239, w:700, h:404}];
+const BLD=[ /* ココが実画像から拾った平坦なパッド */
+ {x:132,y:900,w:132,a:"hotel-generic-luxury-city.webp"},
+ {x:726,y:872,w:126,a:"hotel-generic-premium-city.webp"},
+ {x:222,y:560,w:86, a:"hotel-generic-select-city.webp"},
+ {x:640,y:548,w:92, a:"hotel-generic-premium-resort.webp"}];
+let uid=0;
+function seal(ch,s,sub){
+ const u="s"+(++uid), a=s.w*0.40, b=s.h*0.40;
+ const rx=Math.min(a,b)*0.34, fs=Math.min(a,b)*(sub?1.05:1.25);
+ const O=`<rect x="${-a}" y="${-b}" width="${a*2}" height="${b*2}" rx="${rx}"`;
+ const I=`<rect x="${-a+7}" y="${-b+7}" width="${(a-7)*2}" height="${(b-7)*2}" rx="${Math.max(rx-5,3)}"`;
+ return `<svg viewBox="${-(a+8)} ${-(b+8)} ${(a+8)*2} ${(b+8)*2}">
+ <defs><mask id="${u}m"><rect x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" fill="#fff"/>
+ <image href="${A}stamp-wear-mask.webp" x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" preserveAspectRatio="none" opacity=".85"/></mask></defs>
+ <image href="${A}stamp-press-relief.webp" x="${-a-8}" y="${-b-8}" width="${(a+8)*2}" height="${(b+8)*2}" preserveAspectRatio="none" opacity=".16" style="mix-blend-mode:multiply"/>
+ <g opacity=".15">${O} fill="${DEEP}"/></g>
+ <g filter="url(#sealtex2)" opacity=".95" mask="url(#${u}m)">
+ ${O} fill="none" stroke="${INK}" stroke-width="6" stroke-linejoin="round"/>
+ ${I} fill="none" stroke="${INK}" stroke-width="1.6"/>
+ <text y="${sub?fs*.12:fs*.36}" text-anchor="middle" font-size="${fs}" font-weight="600" fill="${INK}">${ch}</text>
+ ${sub?`<text y="${fs*.78}" text-anchor="middle" font-size="${fs*.38}" font-weight="600" fill="${INK}">${sub}</text>`:""}</g></svg>`;
+}
+const VARIANT = new URLSearchParams(location.search).get("v")||"stay";
+/* 実データ（2026年の直近） */
+const BY_NIGHT=[{c:"Ｍ"},{c:"Ｍ"},{c:"Ｍ"},{c:"Ｉ"},{c:"Ｉ"}];                       /* 1泊=1マス */
+const BY_STAY =[{c:"バ",s:"1泊"},{c:"Ｓ",s:"1泊"},{c:"Ｊ",s:"3泊"},{c:"Ｍ",s:"4泊"},{c:"Ｉ",s:"2泊"}]; /* 1滞在=1マス */
+const DATA = VARIANT==="night"?BY_NIGHT:BY_STAY;
+document.getElementById("cap").textContent = VARIANT==="night"
+ ? "変体1: 1泊=1マス（現行ルール）。MEAバンコク4連泊が3マス、ITC2連泊が2マスを占める。"
+ : "変体2: 1滞在=1マス（泊数を判子に併記）。直近5軒＝バンクサイド/シェラトンFRA/JWハノイ/MEAバンコク/ITCガーデニアが並ぶ。";
+const B=document.getElementById("b");
+function put(cls,html,x,y,w){
+ const e=document.createElement("span"); e.className=cls;
+ e.style.cssText=`left:${x/852*100}%;top:${y/1515*100}%;width:${w/852*100}%`;
+ e.innerHTML=html; B.appendChild(e);
+}
+BLD.forEach(b=>put("bld",`<img src="${A}${b.a}" style="width:100%;display:block">`,b.x,b.y,b.w));
+put("gate",`<img src="${A}gate-platinum-50.webp" style="width:100%;display:block">`,424,318,88);
+/* 判子: 手前(near)が最新、奥へ行くほど過去 */
+SLOTS.slice().reverse().forEach((s,i)=>{ const d=DATA[DATA.length-1-i]; if(!d) return;
+ const k=s.id==="near"?0.62:0.80; put("st",seal(d.c,s,d.s),s.cx,s.cy,s.w*k+16); });
+put("car",`<img src="${A}pawn-shun-m3.webp" style="width:100%;display:block">`,214,1420,196);
+</script>
