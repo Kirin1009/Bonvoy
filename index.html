@@ -101,13 +101,50 @@
     padding:6px 16px;font-size:12.5px;font-weight:700;box-shadow:0 2px 8px rgba(74,59,46,.15)}
   @keyframes stampin{0%{transform:scale(2.4);opacity:0}55%{transform:scale(0.94);opacity:1}100%{transform:scale(1)}}
   @keyframes stampout{to{opacity:0;transform:scale(0.96)}}
+  /* ===== v1.0.0: 世界・記録・フォーム ===== */
+  .wboard{position:relative;margin:14px -18px 0;overflow:hidden;border-radius:0 0 18px 18px}
+  .wboard img.wbase{width:100%;display:block}
+  .wspr{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 5px 7px rgba(40,28,12,.45));cursor:pointer;border:none;background:none;padding:0}
+  .wgate{position:absolute;transform:translate(-50%,-100%);filter:drop-shadow(0 5px 9px rgba(40,28,12,.4));pointer-events:none}
+  .wcar{position:absolute;transform:translate(0,-100%);filter:drop-shadow(0 4px 6px rgba(40,28,12,.45));pointer-events:none;transition:left .6s,top .6s}
+  .wstamp{position:absolute;transform:translate(-50%,-50%);cursor:pointer}
+  .wstamp svg{display:block;width:100%;height:auto;opacity:.92}
+  .wmore{position:absolute;right:10px;bottom:10px;font-size:11px;font-weight:700;padding:7px 12px;border-radius:999px;
+    border:1px solid rgba(199,151,63,.6);background:rgba(30,42,68,.85);color:#F0D9A6;cursor:pointer}
+  .whudwrap{margin:12px -6px 0}
+  .whud{display:flex;align-items:center;gap:11px;background:var(--navy);border-radius:14px;padding:10px 14px;color:#F4EBD8}
+  .whud .wnum{font-size:26px;font-weight:800;font-family:ui-monospace,monospace;color:#F0D9A6;line-height:1}
+  .whud .wnum small{font-size:11px;font-weight:700;color:#C9BFAC}
+  .whud .wsub{font-size:10.5px;line-height:1.5;color:#D9CDB8}
+  .whud .wsub b{color:#F0D9A6}
+  .scorerow{display:flex;gap:6px;margin-top:8px}
+  .scbtn{flex:1;font-size:10.5px;font-weight:700;color:var(--mid);background:var(--panel);
+    border:1.5px solid var(--line2);border-radius:10px;padding:7px 2px;text-align:center}
+  .scbtn b{display:block;font-size:15px;color:var(--gold);font-family:ui-monospace,monospace}
+  .formrow{margin-top:11px}
+  .formrow label{display:block;font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.08em;margin-bottom:4px}
+  .formrow input,.formrow select{width:100%;padding:11px;border:1.5px solid var(--line2);border-radius:10px;
+    font-size:14px;font-family:inherit;background:var(--panel);color:var(--text)}
+  .formrow2{display:flex;gap:16px;margin-top:12px;font-size:13px;color:var(--mid)}
+  .formrow2 label{display:flex;align-items:center;gap:6px}
+  .formrow2 input{width:18px;height:18px;accent-color:var(--navy)}
+  .selbox{width:100%;padding:10px;border:1.5px solid var(--line2);border-radius:10px;font-size:13px;
+    font-family:inherit;background:var(--panel);color:var(--text);margin-top:6px}
+  .bkarea{width:100%;height:64px;margin-top:8px;padding:9px;border:1.5px solid var(--line2);border-radius:10px;
+    font-size:10px;font-family:ui-monospace,monospace;background:var(--panel);color:var(--mid)}
+  .cohead{display:flex;align-items:center;gap:8px;margin:24px 2px 2px;font-size:15px;font-weight:800;letter-spacing:.15em;
+    border-bottom:2px dashed var(--line2);padding-bottom:8px}
+  .cohead .coseal{width:26px;height:26px;border-radius:6px;border:2px solid var(--navy);color:var(--navy);flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;letter-spacing:0;
+    font-family:'Hiragino Mincho ProN','Yu Mincho',serif;transform:rotate(-4deg)}
+
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="hrow"><h1>Bonvoyラリー</h1><span class="edition" id="edition"></span></div>
-    <p class="sub"><b>マリオット ボンヴォイのホテルを泊まり歩く</b>スタンプ帳。泊まった宿に判子を押して、ブランドを集める。</p>
+    <p class="sub"><b>世界中のBonvoyホテルを泊まり歩く</b>旅の台帳。泊まった宿が判子になり、あなたの世界に建っていく。</p>
   </header>
 
   <div class="actions">
@@ -117,23 +154,43 @@
   <div id="notice" style="display:none"></div>
 
   <div class="tabs">
-    <button class="tab on" data-v="rally">ラリー</button>
+    <button class="tab on" data-v="world">世 界</button>
+    <button class="tab" data-v="rec">記 録</button>
     <button class="tab" data-v="book">判子帳</button>
+    <button class="tab" data-v="rally">ラリー</button>
   </div>
 
-  <div id="rallyView">
+  <div id="worldView">
+    <div class="whudwrap"><div class="whud" id="whud"></div></div>
+    <div class="wboard" id="wboard"></div>
+  </div>
+
+  <div id="recView" style="display:none"><div id="recList"></div></div>
+
+  <div id="bookView" style="display:none"></div>
+
+  <div id="rallyView" style="display:none">
     <div id="quests"></div>
     <div class="sect">
       <div class="eyebrow" id="radlabel"></div>
       <input type="range" min="200" max="2000" step="100" id="radius">
+      <div class="eyebrow" style="margin-top:14px">じぶんの駒</div>
+      <select id="carSel" class="selbox"><option value="m3">紫のM3ツーリング（俊）</option><option value="220">緑の220クーペ（紗也乃）</option></select>
+    </div>
+    <div class="sect">
+      <div class="eyebrow">バックアップ / 取り込み</div>
+      <textarea id="bkarea" class="bkarea" placeholder="ここにバックアップJSONを表示/貼り付け"></textarea>
+      <div class="fbtnrow">
+        <button class="btn" onclick="window.__backupOut()">書き出し</button>
+        <button class="btn" onclick="window.__backupIn()">取り込み</button>
+      </div>
+      <div class="fbtnrow"><button class="btn" onclick="window.__importShun()">Shunの2026年履歴（41泊）を取り込む</button></div>
     </div>
     <div class="sect">
       <div class="eyebrow">この帳について</div>
       <p class="settext" id="verNote"></p>
     </div>
   </div>
-
-  <div id="bookView" style="display:none"></div>
 </div>
 
 <div class="overlay" id="overlay"><div class="sheet" id="sheet"></div></div>
@@ -147,7 +204,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "0.3.0";
+const APP_VERSION = "1.0.0";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -317,6 +374,8 @@ const BRANDS = {
   aloft:     {label:"アロフト",               cat:"select"},
   moxy:      {label:"モクシー",               cat:"select"},
   residence: {label:"レジデンス・イン",       cat:"longstay"},
+  fairfield: {label:"フェアフィールド",       cat:"select"},
+  execapt:   {label:"エグゼクティブ・アパートメント", cat:"longstay"},
 };
 const CAT_LABEL={luxury:"ラグジュアリー",premium:"プレミアム",select:"セレクト",longstay:"長期滞在"};
 /* 判子帳・ラリーは基本国別＋エリア（city）別。prefが国名ならその国、それ以外（都道府県）は日本 */
@@ -331,72 +390,228 @@ function distance(a,b){
   const x=Math.sin(dLat/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
   return 2*R*Math.asin(Math.sqrt(x));
 }
-const today=()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const pad2=v=>String(v).padStart(2,"0");
+const today=()=>{ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
+const thisYear=()=>new Date().getFullYear();
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-/* ---------- ラリー（お題）。HOTELS から動的に組む ---------- */
-const QUESTS=[
-  {id:"first", seal:"泊", name:"はじめての一泊", desc:"どこか1軒に泊まる", goal:"count", need:1, test:h=>true},
-  {id:"lux",   seal:"贅", name:"ラグジュアリー巡り", desc:"ラグジュアリー区分に泊まる", goal:"all", test:h=>(BRANDS[h.brand]||{}).cat==="luxury"},
-  {id:"brands",seal:"紋", name:"ブランド集め", desc:"泊まったブランドの数", goal:"brands"},
-  {id:"all",   seal:"制", name:"全店制覇", desc:"収録ホテルをすべて踏破", goal:"all", test:h=>true},
+/* ========== 状態 bonvoy:v2 ==========
+   v2 = {stays:{hid:[{d,n,price,pts,upg,earn,memo},...]}, hotels:{hid:{name,brand,country,city,loc}},
+         scores:{hid:{loc,room,meal,fac,svc,memo}}, wants:{hid:date}, radius, car}
+   シード外の宿は hotels ストアに実データで生成（hidは x- プレフィックス）。 */
+const KEY1="bonvoy:v1", KEY2="bonvoy:v2";
+let state={stays:{}, hotels:{}, scores:{}, wants:{}, radius:800, car:"m3"};
+(function load(){
+  try{
+    const raw2=localStorage.getItem(KEY2);
+    if(raw2){ state=Object.assign(state,JSON.parse(raw2)); return; }
+    const raw1=localStorage.getItem(KEY1);
+    if(raw1){                                   /* v1 → v2 移行（v1は退避して残す） */
+      const v1=JSON.parse(raw1);
+      localStorage.setItem(KEY1+":backup",raw1);
+      state.wants=v1.wants||{}; state.radius=v1.radius||800;
+      for(const hid in (v1.stays||{})) state.stays[hid]=[{d:v1.stays[hid],n:1}];
+    }
+  }catch(e){}
+})();
+for(const k of ["stays","hotels","scores","wants"]) if(!state[k]) state[k]={};
+reindex();
+try{ if(!localStorage.getItem(KEY2)) localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}  /* v1→v2移行を即時確定 */
+const save=()=>{ try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } };
+
+/* 宿情報の解決: シード or ユーザー生成 */
+const CONTINENT={"日本":"アジア","タイ":"アジア","ベトナム":"アジア","シンガポール":"アジア","中国":"アジア","バングラデシュ":"アジア","インド":"アジア","韓国":"アジア","台湾":"アジア","香港":"アジア","マレーシア":"アジア","インドネシア":"アジア","フィリピン":"アジア","カンボジア":"アジア","ラオス":"アジア","UAE":"中東","カタール":"中東","ドイツ":"ヨーロッパ","イタリア":"ヨーロッパ","イギリス":"ヨーロッパ","フランス":"ヨーロッパ","スペイン":"ヨーロッパ","スイス":"ヨーロッパ","オーストリア":"ヨーロッパ","オランダ":"ヨーロッパ","ポルトガル":"ヨーロッパ","ギリシャ":"ヨーロッパ","アメリカ":"北米","カナダ":"北米","メキシコ":"北米","ブラジル":"南米","オーストラリア":"オセアニア","ニュージーランド":"オセアニア","エジプト":"アフリカ","モロッコ":"アフリカ","南アフリカ":"アフリカ"};
+const RESORT_CITIES=new Set(["プーケット","カオラック","クラビ","サムイ島","ホアヒン","パタヤ","ラヨーン","沖縄","宮古島","ニセコ","ルスツ","軽井沢","白馬","山中湖","伊豆","琵琶湖","白浜","日光","舞浜","壱岐"]);
+const RYOKAN_IDS=new Set(["suiran","shisui","iki-retreat","yoruya","mitsui-kyoto"]);
+function hotelInfo(hid){
+  const s=byId[hid];
+  if(s) return {id:hid, name:s.name, city:s.city, brand:s.brand, cat:(BRANDS[s.brand]||{}).cat||s.cat,
+    country:countryOf(s), pref:s.pref, lat:s.lat, lng:s.lng, seed:true,
+    loc: RYOKAN_IDS.has(hid)?"ryokan":(RESORT_CITIES.has(s.city)?"resort":"city")};
+  const c=state.hotels[hid];
+  if(c) return {id:hid, name:c.name, city:c.city||"", brand:c.brand, cat:(BRANDS[c.brand]||{}).cat||"premium",
+    country:c.country||"", pref:c.country||"", lat:c.lat, lng:c.lng, seed:false, loc:c.loc||"city"};
+  return null;
+}
+function allHids(){ return [...new Set([...HOTELS.map(h=>h.id), ...Object.keys(state.hotels)])]; }
+const stamped=hid=>(state.stays[hid]||[]).length>0;
+function stayList(){
+  const out=[];
+  for(const hid in state.stays) state.stays[hid].forEach((s,idx)=>out.push(Object.assign({hid,idx},s)));
+  return out.sort((a,b)=>a.d<b.d?-1:1);
+}
+function nightsOfStayInYear(s,y){        /* 年またぎは泊日ベースで按分 */
+  let cnt=0; const t=new Date(s.d+"T00:00:00");
+  for(let i=0;i<(s.n||1);i++){ if(t.getFullYear()===y) cnt++; t.setDate(t.getDate()+1); }
+  return cnt;
+}
+const nightsInYear=y=>stayList().reduce((a,s)=>a+nightsOfStayInYear(s,y),0);
+const totalNights=()=>stayList().reduce((a,s)=>a+(s.n||1),0);
+function addStay(hid,rec){
+  if(!state.stays[hid]) state.stays[hid]=[];
+  if(state.stays[hid].some(s=>s.d===rec.d)){ notify("同じチェックイン日の記録が既にあります。"); return false; }
+  state.stays[hid].push(rec);
+  state.stays[hid].sort((a,b)=>a.d<b.d?-1:1);
+  save(); return true;
+}
+function slugify(name){
+  let s="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,28);
+  if(s==="x-") s="x-h";
+  let base=s,i=2; while(state.hotels[s]||byId[s]) s=base+"-"+(i++);
+  return s;
+}
+
+/* ========== ティア（エリート泊数） ========== */
+const TIERS=[[10,"シルバー"],[25,"ゴールド"],[50,"プラチナ"],[75,"チタン"],[100,"アンバサダー"]];
+function nextTier(nights){ for(const t of TIERS) if(nights<t[0]) return t; return null; }
+
+/* ========== 世界（育つミニチュア世界） ==========
+   座標契約: design/proposals/world-atlas-anchors.json（852x1842自然px、lotsは建物下端中央）。
+   EXTRA_LOTSはココが盤面から実測した追加区画。 */
+const WORLD_BASE="assets/world/base-atlas-gateless.webp";
+const WORLD_SQ={"1": [427, 1590], "2": [425, 1453], "3": [370, 1327], "4": [412, 1205], "5": [450, 1088], "6": [448, 974], "7": [421, 860], "8": [421, 751], "9": [441, 661], "10": [446, 585], "11": [419, 525], "12": [438, 470]};
+const WORLD_GATE_XY=[441, 665];
+const WORLD_GATES=[{"nights": 10, "asset": "assets/vertical-slice/gate-silver.webp", "scale": 0.24}, {"nights": 25, "asset": "assets/world/gate-gold-25.webp", "scale": 0.24}, {"nights": 50, "asset": "assets/world/gate-platinum-50.webp", "scale": 0.24}, {"nights": 75, "asset": "assets/world/gate-titanium-75.webp", "scale": 0.24}, {"nights": 100, "asset": "assets/world/gate-ambassador-100.webp", "scale": 0.24}];
+const WORLD_DEDICATED={"jw-phuket": {"asset": "assets/world/hotel-jw-phuket.webp", "w": 213.7}, "w-osaka": {"asset": "assets/world/hotel-w-osaka.webp", "w": 123.1}, "cy-nagoya": {"asset": "assets/world/hotel-courtyard-nagoya.webp", "w": 148.5}, "marriott-shuzenji": {"asset": "assets/world/hotel-izu-marriott.webp", "w": 138.2}, "moxy-honmachi": {"asset": "assets/world/hotel-moxy-osaka.webp", "w": 93.6}};
+const WORLD_TEMPLATES={"luxury-city": {"asset": "assets/world/hotel-generic-luxury-city.webp", "w": 114.2}, "luxury-resort": {"asset": "assets/world/hotel-generic-luxury-resort.webp", "w": 194.6}, "premium-city": {"asset": "assets/world/hotel-generic-premium-city.webp", "w": 157.1}, "premium-resort": {"asset": "assets/world/hotel-generic-premium-resort.webp", "w": 184.0}, "select-city": {"asset": "assets/world/hotel-generic-select-city.webp", "w": 107.2}, "select-resort": {"asset": "assets/world/hotel-generic-select-resort.webp", "w": 163.8}, "ryokan": {"asset": "assets/world/hotel-generic-ryokan.webp", "w": 174.1}};
+const WORLD_LOTS=[{"x": 126, "y": 1108, "w": 213.7}, {"x": 704, "y": 798, "w": 150}, {"x": 108, "y": 752, "w": 150}, {"x": 423, "y": 380, "w": 150}, {"x": 668, "y": 466, "w": 150}, {"x": 600, "y": 588, "w": 160}, {"x": 575, "y": 378, "w": 150}, {"x": 185, "y": 952, "w": 170}, {"x": 772, "y": 1072, "w": 130}, {"x": 108, "y": 1452, "w": 150}, {"x": 775, "y": 1462, "w": 140}, {"x": 792, "y": 642, "w": 120}];
+const WORLD_TEMPLATE_PICK=i=>{           /* 汎用ミニチュアの選択: 区分×立地(+旅館) */
+  if(i.loc==="ryokan") return "ryokan";
+  const cat=i.cat==="longstay"?"select":(i.cat||"premium");
+  const loc=i.loc==="resort"?"resort":"city";
+  return cat+"-"+loc;
+};
+const wpct=(v,b)=>(v/b*100)+"%";
+function renderWorld(){
+  const y=thisYear(), yn=nightsInYear(y), tot=totalNights();
+  const nt=nextTier(yn);
+  const hids=[...new Set(stayList().map(s=>s.hid))];                 /* 初宿泊順 */
+  const built=hids.slice(0,WORLD_LOTS.length), over=hids.length-built.length;
+  const countries=[...new Set(hids.map(h=>hotelInfo(h)?.country).filter(Boolean))];
+  /* HUD */
+  document.getElementById("whud").innerHTML=
+    `<span class="wnum">${yn}<small>泊</small></span>
+     <div class="wsub">${y}年・${countries.length}カ国 ${hids.length}宿（通算${tot}泊）<br>`+
+     (nt?`${esc(nt[1])}まで <b>あと${nt[0]-yn}泊</b>`:`<b>アンバサダー達成</b>`)+`</div>`;
+  /* 盤面 */
+  const nights=[];                                                   /* 今年の泊を1泊=1マスに展開 */
+  stayList().forEach(s=>{ const t=new Date(s.d+"T00:00:00");
+    for(let i=0;i<(s.n||1);i++){ if(t.getFullYear()===y) nights.push({hid:s.hid,date:`${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`}); t.setDate(t.getDate()+1); }});
+  const win=nights.slice(-12);                                       /* 道は直近12泊の窓 */
+  let hSpr="",sSpr="",cSpr="",gSpr="";
+  built.forEach((hid,ix)=>{
+    const i=hotelInfo(hid); if(!i) return;
+    const ded=WORLD_DEDICATED[hid];
+    const tpl=ded?null:WORLD_TEMPLATES[WORLD_TEMPLATE_PICK(i)];
+    const asset=ded?ded.asset:(tpl?tpl.asset:null); if(!asset) return;
+    const lot=WORLD_LOTS[ix];
+    const w=ded?ded.w:Math.min(lot.w,(tpl.w||150));
+    hSpr+=`<img class="wspr" src="${asset}" alt="${esc(i.name)}" onclick="window.__hotel('${hid}')"
+      style="left:${wpct(lot.x,852)};top:${wpct(lot.y,1842)};width:${wpct(w,852)}">`;
+  });
+  win.forEach((nd,ix)=>{
+    const sq=WORLD_SQ[ix+1]; if(!sq) return;
+    const i=hotelInfo(nd.hid)||{name:"泊"};
+    const ch=(i.name||"泊").replace(/[ 　]/g,"")[0];
+    const shape=i.cat==="luxury"?"hex":(i.cat==="select"?"sq":"circ");
+    sSpr+=`<span class="wstamp" onclick="window.__hotel('${nd.hid}')" style="left:${wpct(sq[0],852)};top:${wpct(sq[1],1842)};width:${wpct(86,852)}">${worldSeal(ch,shape,((ix*37)%9)-4)}</span>`;
+    if(ix===win.length-1)
+      cSpr=`<img class="wcar" src="assets/world/${state.car==="220"?"pawn-sayano-220":"pawn-shun-m3"}.webp" alt="現在地"
+        style="left:${wpct(sq[0]-51,852)};top:${wpct(sq[1]+36,1842)};width:${wpct(102,852)}">`;
+  });
+  if(nt){
+    const g=WORLD_GATES.find(g=>g.nights===nt[0]);
+    if(g) gSpr=`<img class="wgate" src="${g.asset}" alt="${esc(nt[1])}ゲート"
+      style="left:${wpct(WORLD_GATE_XY[0],852)};top:${wpct(WORLD_GATE_XY[1],1842)};width:${wpct(512*g.scale,852)}">`;
+  }
+  document.getElementById("wboard").innerHTML=
+    `<img class="wbase" src="${WORLD_BASE}" alt="">`+hSpr+gSpr+sSpr+cSpr+
+    (over>0?`<button class="wmore" onclick="window.__tab('book')">ほか${over}宿 ›</button>`:"");
+}
+function worldSeal(ch,shape,rot){
+  const ink="#C6402F";
+  let f;
+  if(shape==="hex") f=`<polygon points="0,-34 30,-17 30,17 0,34 -30,17 -30,-17" fill="none" stroke="${ink}" stroke-width="5"/><polygon points="0,-26 23,-13 23,13 0,26 -23,13 -23,-13" fill="none" stroke="${ink}" stroke-width="1.4"/>`;
+  else if(shape==="sq") f=`<rect x="-31" y="-31" width="62" height="62" rx="6" fill="none" stroke="${ink}" stroke-width="5"/><rect x="-24" y="-24" width="48" height="48" fill="none" stroke="${ink}" stroke-width="1.4"/>`;
+  else f=`<circle r="33" fill="none" stroke="${ink}" stroke-width="5"/><circle r="26" fill="none" stroke="${ink}" stroke-width="1.4"/>`;
+  return `<svg viewBox="-45 -45 90 90"><g filter="url(#sealtex)" opacity="0.9" transform="rotate(${rot})">${f}<text y="13" text-anchor="middle" font-size="36" font-weight="800" fill="${ink}" font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${esc(ch)}</text></g></svg>`;
+}
+
+/* ========== ラリー（カウント型が主役 / コンプ型は裏目標） ========== */
+function uniq(arr){ return [...new Set(arr)]; }
+function stayedInfos(){ return uniq(stayList().map(s=>s.hid)).map(hotelInfo).filter(Boolean); }
+const WQUESTS=[
+  {id:"emblems",  seal:"紋", name:"紋章集め",       unit:"種",  tiers:[5,10,15,20], desc:"泊まったブランドの種類",
+    calc:()=>uniq(stayedInfos().map(i=>i.brand)).length},
+  {id:"tabi",     seal:"旅", name:"世界旅籠",       unit:"カ国", tiers:[5,10,20],   desc:"泊まった国の数",
+    calc:()=>uniq(stayedInfos().map(i=>i.country).filter(Boolean)).length},
+  {id:"cont",     seal:"洲", name:"三大陸",         unit:"大陸", tiers:[3],         desc:"泊まった大陸の数",
+    calc:()=>uniq(stayedInfos().map(i=>CONTINENT[i.country]).filter(Boolean)).length},
+  {id:"long",     seal:"連", name:"ロングステイ",   unit:"回",  tiers:[1,3],       desc:"5連泊以上の滞在",
+    calc:()=>stayList().filter(s=>(s.n||1)>=5).length},
+  {id:"regular",  seal:"宿", name:"定宿",           unit:"軒",  tiers:[1,3],       desc:"3回以上滞在したホテル",
+    calc:()=>Object.keys(state.stays).filter(h=>state.stays[h].length>=3).length},
+  {id:"jw5",      seal:"Ｊ", name:"JWの世界",       unit:"カ国", tiers:[5],         desc:"JWマリオットに泊まった国",
+    calc:()=>uniq(stayedInfos().filter(i=>i.brand==="jw").map(i=>i.country)).length},
+  {id:"thai",     seal:"泰", name:"タイ通",         unit:"軒",  tiers:[3,5,10],    desc:"タイで泊まったホテル",
+    calc:()=>stayedInfos().filter(i=>i.country==="タイ").length},
+  {id:"lc",       seal:"雅", name:"世界のLC",       unit:"軒",  tiers:[10],        desc:"ラグジュアリーコレクション",
+    calc:()=>stayedInfos().filter(i=>i.brand==="luxcol").length},
+  {id:"ritz",     seal:"獅", name:"リッツの紋",     unit:"軒",  tiers:[3,5],       desc:"リッツ・カールトン",
+    calc:()=>stayedInfos().filter(i=>i.brand==="ritz").length},
+  {id:"auto",     seal:"筆", name:"オートグラフ蒐集", unit:"軒", tiers:[5,10],      desc:"オートグラフ コレクション",
+    calc:()=>stayedInfos().filter(i=>i.brand==="autograph").length},
 ];
-/* 国制覇（2カ国以上収録時のみ）とエリア制覇（2軒以上のエリアのみ）をHOTELSから動的生成 */
+function wqProgress(q){
+  const n=q.calc(); const t=q.tiers.find(t=>n<t) ?? q.tiers[q.tiers.length-1];
+  return {n, t, full:n>=q.tiers[q.tiers.length-1], step:q.tiers.filter(x=>n>=x).length, steps:q.tiers.length};
+}
+/* 裏目標: シード国のコンプ型（従来ラリー） */
+const QUESTS=[
+  {id:"all", seal:"制", name:"全店制覇", desc:"シード収録ホテルをすべて踏破", test:h=>true},
+];
 {
   const cs=[...new Set(HOTELS.map(countryOf))];
-  if(cs.length>=2) cs.forEach(c=>QUESTS.push(
-    {id:"c-"+c, seal:COUNTRIES[c]||c[0], name:`${c}制覇`, desc:`${c}の収録ホテルをすべて踏破`, goal:"all", test:h=>countryOf(h)===c}));
+  cs.forEach(c=>QUESTS.push({id:"c-"+c, seal:COUNTRIES[c]||c[0], name:`${c}制覇`, desc:`${c}の収録ホテルをすべて踏破`, test:h=>countryOf(h)===c}));
   [...new Set(HOTELS.map(h=>h.city))].filter(a=>a&&HOTELS.filter(h=>h.city===a).length>=2).forEach(a=>QUESTS.push(
-    {id:"a-"+a, seal:a[0], name:`${a}巡り`, desc:`${a}のホテルをすべて踏破`, goal:"all", test:h=>h.city===a}));
+    {id:"a-"+a, seal:a[0], name:`${a}巡り`, desc:`${a}のホテルをすべて踏破`, test:h=>h.city===a}));
 }
-QUESTS.forEach(q=>q.targets=(q.test?HOTELS.filter(q.test):HOTELS).map(h=>h.id));
-
-/* ---------- 状態 ---------- */
-const KEY="bonvoy:v1";
-let state={stays:{}, wants:{}, radius:800};
-try{ const raw=localStorage.getItem(KEY); if(raw) state=Object.assign(state,JSON.parse(raw)); }catch(e){}
-if(!state.wants) state.wants={};
-reindex();
-const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } };
-const stamped=id=>!!state.stays[id];
-
+QUESTS.forEach(q=>q.targets=HOTELS.filter(q.test).map(h=>h.id));
 function progress(q){
   const done=q.targets.filter(stamped);
-  if(q.goal==="brands"){
-    const got=new Set(done.map(id=>byId[id].brand)).size;
-    const t=new Set(HOTELS.map(h=>h.brand)).size;
-    return {n:got, t:t||1, full:t>0&&got===t, doneIds:done};
-  }
-  if(q.goal==="count") return {n:done.length, t:q.need, full:done.length>=q.need, doneIds:done};
-  return {n:done.length, t:q.targets.length, full:q.targets.length>0&&done.length===q.targets.length, doneIds:done};
+  return {n:done.length, t:q.targets.length, full:q.targets.length>0&&done.length===q.targets.length};
 }
 
-/* ---------- 描画 ---------- */
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let curTab="rally";
+/* ========== 描画 ========== */
+let curTab="world";
+const qcard=(q,p,extra)=>`<button class="qcard${p.full?" done":""}" data-q="${q.id}">
+  <div class="qhead"><span class="qseal">${q.seal}</span>
+    <span class="qbody"><div class="qname">${esc(q.name)}${p.full?' <span style="font-size:10px;color:var(--gold);font-weight:700">満願</span>':""}</div>
+    <div class="qdesc">${esc(q.desc)}${extra||""}</div></span>
+    <span class="qnum">${p.n}<small>/${p.t}</small></span></div>
+  <div class="bar"><div style="width:${Math.min(100,p.n/p.t*100).toFixed(1)}%"></div></div></button>`;
 function render(){
   document.getElementById("edition").textContent=EDITION;
   document.getElementById("verNote").textContent=
-    `Bonvoyラリー v${APP_VERSION}。日本・タイの対象ブランド${HOTELS.length}軒を収録（${EDITION}）。記録はこの端末に保存されます。`;
-  const n=Object.keys(state.stays).filter(id=>byId[id]).length;
-  document.getElementById("total").innerHTML=`判子 ${n}<span style="font-size:10px">宿</span>`;
-  document.getElementById("quests").innerHTML=
-    (HOTELS.length?"":`<div class="notice" style="margin-top:16px">ホテルデータがまだ入っていません。収録範囲を決めて実データで投入してください（bonvoy/index.html の HOTELS）。</div>`)
-    +QUESTS.map(q=>{
-      const p=progress(q), pct=p.t?Math.min(100,p.n/p.t*100):0;
-      return `<button class="qcard${p.full?" done":""}" data-q="${q.id}">
-        <div class="qhead">
-          <span class="qseal">${q.seal}</span>
-          <span class="qbody">
-            <div class="qname">${esc(q.name)}${p.full?' <span style="font-size:10px;color:var(--gold);font-weight:700">満願</span>':""}</div>
-            <div class="qdesc">${esc(q.desc)}</div>
-          </span>
-          <span class="qnum">${p.n}<small>/${p.t}</small></span>
-        </div>
-        <div class="bar"><div style="width:${pct.toFixed(1)}%"></div></div>
-      </button>`;
-    }).join("");
-  document.querySelectorAll(".qcard").forEach(b=>b.addEventListener("click",()=>openQuest(b.dataset.q)));
+    `Bonvoyラリー v${APP_VERSION}。世界中のBonvoy宿泊を記録できます（シード${HOTELS.length}軒収録・${EDITION}）。記録はこの端末に保存されます。`;
+  const n=uniq(stayList().map(s=>s.hid)).length;
+  document.getElementById("total").innerHTML=`${totalNights()}<span style="font-size:10px">泊</span>・${n}<span style="font-size:10px">宿</span>`;
+  if(curTab==="world") renderWorld();
+  if(curTab==="rec") renderRec();
   if(curTab==="book") renderBook();
+  if(curTab==="rally") renderRally();
+}
+function renderRally(){
+  document.getElementById("quests").innerHTML=
+    `<div class="eyebrow" style="margin:16px 2px 4px">世界のお題</div>`+
+    WQUESTS.map(q=>{ const p=wqProgress(q);
+      return qcard(q,p, q.tiers.length>1?`　<span class="mono" style="font-size:10px">段位 ${p.step}/${p.steps}</span>`:""); }).join("")+
+    `<div class="eyebrow" style="margin:20px 2px 4px">裏目標（シード国コンプ）</div>`+
+    QUESTS.map(q=>qcard(q,progress(q))).join("");
+  document.querySelectorAll(".qcard").forEach(b=>b.addEventListener("click",()=>{
+    const wq=WQUESTS.find(x=>x.id===b.dataset.q);
+    if(wq) openWQuest(wq); else openQuest(b.dataset.q);
+  }));
 }
 
 /* ---------- シート ---------- */
@@ -405,8 +620,28 @@ const openSheet=h=>{ sheetEl.innerHTML=h; overlay.classList.add("on"); sheetEl.s
 const closeSheet=()=>{ overlay.classList.remove("on"); document.body.style.overflow=""; };
 overlay.addEventListener("click",e=>{ if(e.target===overlay) closeSheet(); });
 window.__close=closeSheet;
+window.__tab=t=>{ closeSheet(); switchTab(t); };
 const sheetHead=t=>`<div class="shead"><span class="eyebrow">${esc(t)}</span><button class="xbtn" onclick="window.__close()">×</button></div>`;
 
+function openWQuest(q){
+  const p=wqProgress(q);
+  const rows=stayedInfos().map(i=>{
+    let hit=false;
+    if(q.id==="emblems"||q.id==="tabi"||q.id==="cont") hit=true;
+    else if(q.id==="jw5") hit=i.brand==="jw";
+    else if(q.id==="thai") hit=i.country==="タイ";
+    else if(q.id==="lc") hit=i.brand==="luxcol";
+    else if(q.id==="ritz") hit=i.brand==="ritz";
+    else if(q.id==="auto") hit=i.brand==="autograph";
+    else if(q.id==="long") hit=(state.stays[i.id]||[]).some(s=>(s.n||1)>=5);
+    else if(q.id==="regular") hit=(state.stays[i.id]||[]).length>=3;
+    return hit?`<button class="frow" onclick="window.__hotel('${i.id}')">
+      <span class="hanko">${q.seal}</span><span class="nm">${esc(i.name)}</span><span class="ct">${esc(i.country)}</span></button>`:"";
+  }).join("");
+  openSheet(sheetHead(q.name)+
+    `<p style="font-size:12.5px;color:var(--mid);line-height:1.8;margin:0 0 8px">${esc(q.desc)}。進捗 <b class="mono">${p.n}/${p.t}${esc(q.unit)}</b>${p.full?'・<b style="color:var(--gold)">満願</b>':""}　段階: ${q.tiers.join("→")}${esc(q.unit)}</p>
+    <div>${rows||'<p class="settext">まだ対象の宿泊がありません。</p>'}</div>`);
+}
 function openQuest(qid){
   const q=QUESTS.find(x=>x.id===qid), p=progress(q);
   const rows=q.targets.map(id=>byId[id])
@@ -423,48 +658,156 @@ function openQuest(qid){
 
 /* ---------- ホテルカード ---------- */
 window.__hotel=(hid,backQid)=>openHotel(hid,backQid);
+window.__quest=qid=>openQuest(qid);
+const SCORE_KEYS=[["loc","立地"],["room","部屋"],["meal","食事"],["fac","施設"],["svc","接客"]];
 function openHotel(hid,backQid){
-  const h=byId[hid]; if(!h) return;
+  const i=hotelInfo(hid); if(!i) return;
   const on=stamped(hid), want=!!state.wants[hid];
-  const br=BRANDS[h.brand];
-  const back=backQid?`<button class="backbtn" onclick="window.__quest('${backQid}')">‹ ${esc(QUESTS.find(q=>q.id===backQid).name)}</button>`:"";
+  const br=BRANDS[i.brand];
+  const stays=(state.stays[hid]||[]);
+  const sc=state.scores[hid]||{};
+  const vals=SCORE_KEYS.map(k=>sc[k[0]]).filter(v=>v>0);
+  const avg=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):null;
+  const back=backQid?`<button class="backbtn" onclick="window.__quest('${backQid}')">‹ もどる</button>`:"";
+  const seedSeal=byId[hid]?hotelSeal(byId[hid],{size:48,hidden:!on}):
+    `<svg viewBox="-45 -45 90 90" width="48" height="48">${worldSeal((i.name||"泊")[0], i.cat==="luxury"?"hex":(i.cat==="select"?"sq":"circ"), -5).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</svg>`;
   openSheet(`<div class="shead">${back||'<span class="eyebrow">ホテルカード</span>'}<button class="xbtn" onclick="window.__close()">×</button></div>
     <div style="display:flex;align-items:flex-start;gap:11px">
-      ${on?`<span style="width:48px;flex-shrink:0">${hotelSeal(h,{size:48})}</span>`:`<span style="width:48px;flex-shrink:0;opacity:0.55">${hotelSeal(h,{hidden:true,size:48})}</span>`}
+      <span style="width:48px;flex-shrink:0;${on?"":"opacity:.55"}">${seedSeal}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:16.5px;font-weight:800;line-height:1.4">${esc(h.name)}${want?'<span class="wantstar">★</span>':""}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(h.pref||"")}${esc(h.city?"・"+h.city:"")}</div>
+        <div style="font-size:16.5px;font-weight:800;line-height:1.4">${esc(i.name)}${want?'<span class="wantstar">★</span>':""}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(i.country||i.pref||"")}${esc(i.city?"・"+i.city:"")}${i.seed?"":"　<span class='badge'>手動登録</span>"}</div>
       </div>
     </div>
     <div style="margin-top:9px">${br?`<span class="badge">${esc(br.label)}</span><span class="badge" style="color:var(--gold);border-color:var(--gold)">${esc(CAT_LABEL[br.cat]||"")}</span>`:""}</div>
-    <p style="font-size:11.5px;color:var(--mid);margin:10px 0 0">${on?`<b style="color:var(--stamp)">宿泊済み</b>　<span class="mono">${esc(state.stays[hid])}</span>`:"未踏"}</p>
+    ${stays.length?`<div style="margin-top:10px">`+stays.map((s,ix)=>
+      `<button class="frow" onclick="window.__stay('${hid}',${ix})"><span class="hanko">泊</span>
+        <span class="nm mono" style="font-size:12px">${esc(s.d)}　${s.n||1}泊${s.price?`　¥${Number(s.price).toLocaleString()}`:""}${s.pts?"　P":""}${s.upg?"　UG↑":""}</span>
+        <span class="ct">編集</span></button>`).join("")+`</div>`:`<p style="font-size:11.5px;color:var(--mid);margin:10px 0 0">未踏</p>`}
+    <div style="margin-top:12px" class="eyebrow">採点${avg?`　<span style="color:var(--gold)">${avg}</span>`:""}</div>
+    <div class="scorerow">${SCORE_KEYS.map(k=>`<button class="scbtn" onclick="window.__score('${hid}','${k[0]}','${backQid||""}')">${k[1]}<b>${sc[k[0]]||"−"}</b></button>`).join("")}</div>
     <div class="fbtnrow">
-      ${on?`<button class="btn" onclick="window.__stamp('${hid}','${backQid||""}')">判子を取り消す</button>`
-          :`<button class="btn primary" onclick="window.__stamp('${hid}','${backQid||""}')">泊まった（手動で押す）</button>`}
-      <button class="btn" style="${want?"border-color:var(--gold);color:var(--gold)":""}" onclick="window.__want('${hid}','${backQid||""}')">${want?"★ 泊まりたい済":"☆ 泊まりたい"}</button>
+      <button class="btn primary" onclick="window.__stampToday('${hid}','${backQid||""}')">泊まった（今日）</button>
+      <button class="btn" onclick="window.__recFor('${hid}')">日付を指定して記録</button>
     </div>
     <div class="fbtnrow">
-      <button class="btn" onclick="window.open('https://www.google.com/maps?q=${h.lat},${h.lng}','_blank')">Googleマップで開く</button>
+      <button class="btn" style="${want?"border-color:var(--gold);color:var(--gold)":""}" onclick="window.__want('${hid}','${backQid||""}')">${want?"★ 泊まりたい済":"☆ 泊まりたい"}</button>
+      ${i.lat?`<button class="btn" onclick="window.open('https://www.google.com/maps?q=${i.lat},${i.lng}','_blank')">Googleマップ</button>`:""}
     </div>`);
 }
-window.__quest=qid=>openQuest(qid);
-window.__stamp=(hid,backQid)=>{
-  const h=byId[hid];
-  if(stamped(hid)){
-    if(!confirm(`${h.name} の判子を取り消しますか？`)) return;
-    delete state.stays[hid]; save(); render(); openHotel(hid,backQid||undefined);
-  }else{
-    state.stays[hid]=today(); save(); render(); openHotel(hid,backQid||undefined); stampFx(h);
-  }
+window.__score=(hid,key,backQid)=>{
+  if(!state.scores[hid]) state.scores[hid]={};
+  const cur=state.scores[hid][key]||0;
+  state.scores[hid][key]=cur>=5?0:cur+1;          /* タップで1→5→未採点を循環 */
+  save(); openHotel(hid,backQid||undefined);
+};
+window.__stampToday=(hid,backQid)=>{
+  const i=hotelInfo(hid);
+  if(addStay(hid,{d:today(),n:1})){ render(); openHotel(hid,backQid||undefined); stampFx(i); }
 };
 window.__want=(hid,backQid)=>{
   if(state.wants[hid]) delete state.wants[hid]; else state.wants[hid]=today();
   save(); render(); openHotel(hid,backQid||undefined);
 };
 
-/* ---------- ホテル判子（自動生成。サ道場の facSeal と同系） ----------
-   形=区分（六角=luxury / 丸=premium / 角=select / 五角=longstay）、中央=頭文字、肩=都市。
-   モチーフ（王冠など）は本番データを入れる段で決める */
+/* ---------- 宿泊の記録・編集 ---------- */
+window.__stay=(hid,ix)=>{
+  const i=hotelInfo(hid), s=state.stays[hid][ix];
+  openSheet(sheetHead("宿泊の編集 — "+i.name)+stayForm(s)+
+    `<div class="fbtnrow"><button class="btn primary" onclick="window.__saveStay('${hid}',${ix})">保存</button>
+     <button class="btn" style="color:var(--stamp)" onclick="window.__delStay('${hid}',${ix})">この記録を削除</button></div>`);
+};
+function stayForm(s){
+  return `<div class="formrow"><label>チェックイン日</label><input type="date" id="f-d" value="${esc(s.d||today())}"></div>
+    <div class="formrow"><label>泊数</label><input type="number" id="f-n" min="1" max="60" value="${s.n||1}"></div>
+    <div class="formrow"><label>価格（円・任意）</label><input type="number" id="f-price" min="0" value="${s.price||""}" placeholder="ポイント泊は0"></div>
+    <div class="formrow2"><label><input type="checkbox" id="f-pts" ${s.pts?"checked":""}> ポイント利用</label>
+      <label><input type="checkbox" id="f-upg" ${s.upg?"checked":""}> アップグレード</label></div>
+    <div class="formrow"><label>ひとことメモ</label><input type="text" id="f-memo" value="${esc(s.memo||"")}" placeholder="朝食が最高だった 等"></div>`;
+}
+function readStayForm(){
+  const rec={d:document.getElementById("f-d").value||today(), n:Math.max(1,+document.getElementById("f-n").value||1)};
+  const price=document.getElementById("f-price").value; if(price!=="") rec.price=+price;
+  if(document.getElementById("f-pts").checked) rec.pts=true;
+  if(document.getElementById("f-upg").checked) rec.upg=true;
+  const memo=document.getElementById("f-memo").value.trim(); if(memo) rec.memo=memo;
+  return rec;
+}
+window.__saveStay=(hid,ix)=>{
+  const rec=readStayForm(); const old=state.stays[hid][ix];
+  if(old.earn) rec.earn=old.earn;
+  state.stays[hid][ix]=rec;
+  state.stays[hid].sort((a,b)=>a.d<b.d?-1:1);
+  save(); closeSheet(); render(); notify("保存しました。");
+};
+window.__delStay=(hid,ix)=>{
+  const i=hotelInfo(hid);
+  if(!confirm(`${i.name} ${state.stays[hid][ix].d} の記録を削除しますか？`)) return;
+  state.stays[hid].splice(ix,1);
+  if(!state.stays[hid].length) delete state.stays[hid];
+  save(); closeSheet(); render(); notify("削除しました。");
+};
+window.__recFor=hid=>{
+  const i=hotelInfo(hid);
+  openSheet(sheetHead("宿泊を記録 — "+i.name)+stayForm({})+
+    `<div class="fbtnrow"><button class="btn primary" onclick="window.__addStayGo('${hid}')">判子を押す</button></div>`);
+};
+window.__addStayGo=hid=>{
+  const rec=readStayForm();
+  if(addStay(hid,rec)){ closeSheet(); render(); stampFx(hotelInfo(hid)); }
+};
+
+/* 記録タブ */
+function renderRec(){
+  const list=stayList().reverse();
+  document.getElementById("recList").innerHTML=
+    `<button class="btn primary" style="width:100%;margin:14px 0 6px" onclick="window.__newStay()">＋ 宿泊を記録</button>`+
+    (list.length?list.map(s=>{
+      const i=hotelInfo(s.hid)||{name:"?"};
+      return `<button class="frow" onclick="window.__stay('${s.hid}',${s.idx})">
+        <span class="hanko">${esc((i.name||"泊")[0])}</span>
+        <span class="nm">${esc(i.name)}<br><span class="mono" style="font-size:10px;color:var(--muted)">${esc(s.d)}・${s.n||1}泊${s.price?`・¥${Number(s.price).toLocaleString()}`:""}${s.pts?"・P":""}${s.upg?"・UG↑":""}${s.memo?" ・✎":""}</span></span>
+        <span class="ct">${esc(i.country||"")}</span></button>`;
+    }).join(""):`<p class="settext" style="margin-top:10px">まだ記録がありません。「＋ 宿泊を記録」またはGPSチェックインから。</p>`);
+}
+window.__newStay=()=>{
+  openSheet(sheetHead("どの宿に泊まった？")+
+    `<input type="text" id="hsearch" placeholder="ホテル名で検索（シード${HOTELS.length}軒）" style="width:100%;padding:11px;border:1.5px solid var(--line2);border-radius:10px;font-size:14px;background:var(--panel);color:var(--text)" oninput="window.__hfilter()">
+     <div id="hresults" style="margin-top:8px"></div>
+     <div class="fbtnrow"><button class="btn" onclick="window.__newWorldHotel()">リストにない宿（世界のどこでも）</button></div>`);
+  window.__hfilter();
+};
+window.__hfilter=()=>{
+  const q=(document.getElementById("hsearch").value||"").trim().toLowerCase();
+  const pool=allHids().map(hotelInfo).filter(Boolean);
+  const hit=(q?pool.filter(i=>(i.name+i.city+i.country).toLowerCase().includes(q)):pool.filter(i=>stamped(i.id))).slice(0,10);
+  document.getElementById("hresults").innerHTML=hit.map(i=>
+    `<button class="frow" onclick="window.__recFor('${i.id}')"><span class="dot"></span>
+     <span class="nm">${esc(i.name)}</span><span class="ct">${esc(i.country||"")}${esc(i.city?"・"+i.city:"")}</span></button>`).join("")
+    ||`<p class="settext">${q?"該当なし。下の「リストにない宿」からどうぞ。":"検索するか、泊まったことのある宿から選択。"}</p>`;
+};
+window.__newWorldHotel=()=>{
+  openSheet(sheetHead("世界の宿を登録")+
+    `<div class="formrow"><label>ホテル名（正式名）</label><input type="text" id="w-name" placeholder="例: The Westin Dhaka"></div>
+     <div class="formrow"><label>ブランド</label><select id="w-brand">${Object.keys(BRANDS).map(k=>`<option value="${k}">${esc(BRANDS[k].label)}</option>`).join("")}</select></div>
+     <div class="formrow"><label>国</label><input type="text" id="w-country" placeholder="例: バングラデシュ"></div>
+     <div class="formrow"><label>都市</label><input type="text" id="w-city" placeholder="例: ダッカ"></div>
+     <div class="formrow"><label>立地タイプ</label><select id="w-loc"><option value="city">都市</option><option value="resort">リゾート</option><option value="ryokan">旅館・リトリート</option></select></div>
+     <p class="settext">実在の宿を正式名で。判子と世界のミニチュアはここから自動生成されます。</p>
+     <div class="fbtnrow"><button class="btn primary" onclick="window.__saveWorldHotel()">登録して記録へ</button></div>`);
+};
+window.__saveWorldHotel=()=>{
+  const name=document.getElementById("w-name").value.trim();
+  if(!name){ notify("ホテル名を入れてください。","err"); return; }
+  const hid=slugify(name);
+  state.hotels[hid]={name, brand:document.getElementById("w-brand").value,
+    country:document.getElementById("w-country").value.trim(),
+    city:document.getElementById("w-city").value.trim(),
+    loc:document.getElementById("w-loc").value};
+  save(); window.__recFor(hid);
+};
+
+/* ---------- ホテル判子（シード用・自動生成） ---------- */
 const sealHash=s=>{ let h=0; for(const c of s) h=(h*31+c.charCodeAt(0))>>>0; return h; };
 function hotelSeal(h,o={}){
   const ink=o.ink||"#D9483B";
@@ -490,42 +833,54 @@ function hotelSeal(h,o={}){
   return `<svg viewBox="-45 -45 90 90" ${attr}><g filter="url(#sealtex)" opacity="0.9">${body}</g></svg>`;
 }
 
-/* ---------- 判子帳 ---------- */
+/* ---------- 判子帳（国別。シード＋世界の宿） ---------- */
 function renderBook(){
   const el=document.getElementById("bookView");
-  if(!HOTELS.length){ el.innerHTML=`<div class="notice" style="margin-top:16px">ホテルデータが入ると、ここに判子が並びます。</div>`; return; }
-  /* 基本国別 → エリア（city）別。エリア内は区分順→名前順 */
   const catOrder={luxury:0,premium:1,select:2,longstay:3};
-  const grid=hs=>`<div class="bgrid">`+hs.map(h=>`<button class="bcell" onclick="window.__hotel('${h.id}')">${hotelSeal(h,{hidden:!stamped(h.id)})}<span class="bnm${stamped(h.id)?"":" off"}">${esc(h.name)}</span></button>`).join("")+`</div>`;
-  el.innerHTML=Object.keys(COUNTRIES).map(c=>{
-    const chs=HOTELS.filter(h=>countryOf(h)===c);
+  const grid=hs=>`<div class="bgrid">`+hs.map(h=>`<button class="bcell" onclick="window.__hotel('${h.id}')">${byId[h.id]?hotelSeal(byId[h.id],{hidden:!stamped(h.id)}):`<svg viewBox="-45 -45 90 90">${worldSeal((h.name||"泊")[0],h.cat==="luxury"?"hex":(h.cat==="select"?"sq":"circ"),-4).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</svg>`}<span class="bnm${stamped(h.id)?"":" off"}">${esc(h.name)}</span></button>`).join("")+`</div>`;
+  const seedCountries=Object.keys(COUNTRIES);
+  let html=seedCountries.map(c=>{
+    const chs=HOTELS.filter(h=>countryOf(h)===c).map(h=>hotelInfo(h.id));
     if(!chs.length) return "";
     const cn=chs.filter(h=>stamped(h.id)).length;
     const areas=[...new Set(chs.map(h=>h.city))];
     return `<div class="cohead"><span class="coseal">${COUNTRIES[c]}</span>${esc(c)}　<span class="mono" style="font-size:11px;color:var(--muted)">${cn}/${chs.length}</span></div>`
       +areas.map(a=>{
-        const hs=chs.filter(h=>h.city===a).sort((x,y)=>(catOrder[(BRANDS[x.brand]||{}).cat]??9)-(catOrder[(BRANDS[y.brand]||{}).cat]??9)||x.name.localeCompare(y.name,"ja"));
+        const hs=chs.filter(h=>h.city===a).sort((x,y)=>(catOrder[x.cat]??9)-(catOrder[y.cat]??9)||x.name.localeCompare(y.name,"ja"));
         const n=hs.filter(h=>stamped(h.id)).length;
         return `<div class="eyebrow" style="margin:15px 2px 9px">${esc(a)}　${n}<span style="letter-spacing:0">/${hs.length}</span></div>`+grid(hs);
       }).join("");
   }).join("");
+  /* 世界の宿（シード外）: 国別 */
+  const customs=Object.keys(state.hotels).map(hotelInfo).filter(Boolean);
+  const wCountries=[...new Set(customs.map(h=>h.country||"その他"))];
+  if(customs.length){
+    html+=`<div class="cohead" style="margin-top:26px"><span class="coseal">世</span>世界の宿　<span class="mono" style="font-size:11px;color:var(--muted)">${customs.length}軒</span></div>`;
+    html+=wCountries.map(c=>{
+      const hs=customs.filter(h=>(h.country||"その他")===c);
+      return `<div class="eyebrow" style="margin:15px 2px 9px">${esc(c)}　${hs.length}軒</div>`+grid(hs);
+    }).join("");
+  }
+  el.innerHTML=html;
 }
 
 /* ---------- タブ ---------- */
-document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
-  curTab=b.dataset.v;
-  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
-  document.getElementById("rallyView").style.display = curTab==="rally" ? "" : "none";
-  document.getElementById("bookView").style.display = curTab==="book" ? "" : "none";
-  if(curTab==="book") renderBook();
-}));
+function switchTab(t){
+  curTab=t;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x.dataset.v===t));
+  for(const v of ["world","rec","book","rally"])
+    document.getElementById(v+"View").style.display = curTab===v ? "" : "none";
+  render();
+}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.v)));
 
 /* ---------- 判子演出 ---------- */
 let fxT1,fxT2;
-function stampFx(h){
+function stampFx(i){
   const el=document.getElementById("stampfx");
-  el.innerHTML=`<div class="seal">${hotelSeal(h,{size:150})}</div>
-    <div class="fxname">${esc(h.name)}　${esc(today())}</div>`;
+  const seed=byId[i.id];
+  el.innerHTML=`<div class="seal">${seed?hotelSeal(seed,{size:150}):`<svg viewBox="-45 -45 90 90" width="150" height="150">${worldSeal((i.name||"泊")[0], i.cat==="luxury"?"hex":(i.cat==="select"?"sq":"circ"),-5).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</svg>`}</div>
+    <div class="fxname">${esc(i.name)}　${esc(today())}</div>`;
   el.classList.remove("bye"); el.classList.add("on");
   clearTimeout(fxT1); clearTimeout(fxT2);
   fxT1=setTimeout(()=>el.classList.add("bye"),1400);
@@ -535,7 +890,6 @@ function stampFx(h){
 /* ---------- GPSチェックイン ---------- */
 document.getElementById("stampBtn").addEventListener("click",()=>{
   const btn=document.getElementById("stampBtn");
-  if(!HOTELS.length){ notify("ホテルデータがまだ入っていません。","err"); return; }
   btn.disabled=true; btn.textContent="測位中…";
   navigator.geolocation.getCurrentPosition(pos=>{
     btn.disabled=false; btn.textContent="現在地でチェックイン";
@@ -543,14 +897,16 @@ document.getElementById("stampBtn").addEventListener("click",()=>{
     const near=HOTELS.map(h=>({h,d:distance(p,h)})).filter(x=>x.d<=state.radius).sort((a,b)=>a.d-b.d);
     if(!near.length){
       const alls=HOTELS.map(h=>({h,d:distance(p,h)})).sort((a,b)=>a.d-b.d)[0];
-      notify(alls?`半径${state.radius}m以内に収録ホテルなし。最寄りは ${alls.h.name}（約${Math.round(alls.d)}m）。`:"収録ホテルがありません。","err");
+      notify(alls?`半径${state.radius}m以内にシード宿なし。最寄りは ${alls.h.name}（約${Math.round(alls.d)}m）。リスト外の宿は「＋宿泊を記録」から。`:"シード宿がありません。","err");
     }else if(near.length===1){ gpsStamp(near[0].h); }
     else openSheet(sheetHead("どのホテルにいますか？")+near.map(x=>
       `<button class="choosebtn" onclick="window.__gps('${x.h.id}')"><span>${esc(x.h.name)}</span><span class="d">${Math.round(x.d)}m</span></button>`).join(""));
   },err=>{ btn.disabled=false; btn.textContent="現在地でチェックイン"; notify("現在地を取得できませんでした。","err"); },
   {enableHighAccuracy:true,timeout:12000,maximumAge:30000});
 });
-function gpsStamp(h){ if(stamped(h.id)){ notify(`${h.name} は判子済みです`); return; } state.stays[h.id]=today(); save(); render(); stampFx(h); }
+function gpsStamp(h){
+  if(addStay(h.id,{d:today(),n:1})){ render(); stampFx(hotelInfo(h.id)); }
+}
 window.__gps=id=>{ closeSheet(); gpsStamp(byId[id]); };
 
 /* ---------- 通知・設定 ---------- */
@@ -565,9 +921,63 @@ radEl.value=state.radius;
 const radLabel=()=>document.getElementById("radlabel").textContent=`GPS判定半径 — ${state.radius}m（ホテルは敷地が広いので広め）`;
 radLabel();
 radEl.addEventListener("input",()=>{ state.radius=+radEl.value; radLabel(); save(); });
+document.getElementById("carSel").value=state.car||"m3";
+document.getElementById("carSel").addEventListener("change",e=>{ state.car=e.target.value; save(); render(); });
 
-render();
+/* ---------- バックアップ / 履歴取り込み ---------- */
+window.__backupOut=()=>{
+  const ta=document.getElementById("bkarea");
+  ta.value=JSON.stringify(state); ta.select();
+  try{ document.execCommand("copy"); notify("バックアップJSONをコピーしました。"); }catch(e){ notify("表示したJSONを手動でコピーしてください。"); }
+};
+window.__backupIn=()=>{
+  const ta=document.getElementById("bkarea");
+  try{
+    const obj=JSON.parse(ta.value);
+    if(!obj||typeof obj!=="object"||!obj.stays) throw 0;
+    if(!confirm("現在の記録をこのJSONで置き換えます。よろしいですか？")) return;
+    state=Object.assign({stays:{},hotels:{},scores:{},wants:{},radius:800,car:"m3"},obj);
+    save(); render(); notify("取り込みました。");
+  }catch(e){ notify("JSONを解釈できませんでした。","err"); }
+};
+/* Shunの2026年実履歴（docs/宿泊履歴-取り込みメモ.md より。二重取り込みはチェックイン日で防止） */
+const PRESET_HOTELS={
+  "x-publichouse-bkk":{name:"Public House Bangkok",brand:"designhotels",country:"タイ",city:"バンコク",loc:"city"},
+  "x-westin-dhaka":{name:"The Westin Dhaka",brand:"westin",country:"バングラデシュ",city:"ダッカ",loc:"city"},
+  "x-mea-bangkok":{name:"MEAバンコク・タウンホール・スクンビット",brand:"execapt",country:"タイ",city:"バンコク",loc:"city"},
+  "x-fairfield-kunshan":{name:"Fairfield by Marriott Kunshan",brand:"fairfield",country:"中国",city:"昆山",loc:"city"},
+  "x-jw-saigon":{name:"JWマリオット・ホテル＆スイート・サイゴン",brand:"jw",country:"ベトナム",city:"ホーチミン",loc:"city"},
+  "x-gekko-frankfurt":{name:"Gekko House Frankfurt",brand:"tribute",country:"ドイツ",city:"フランクフルト",loc:"city"},
+  "x-ortea-sicily":{name:"Ortea Palace Hotel, Sicily",brand:"autograph",country:"イタリア",city:"シラクーサ",loc:"resort"},
+  "x-bankside-london":{name:"バンクサイド・ホテル ロンドン",brand:"autograph",country:"イギリス",city:"ロンドン",loc:"city"},
+  "x-sheraton-fra":{name:"Sheraton Frankfurt Airport",brand:"sheraton",country:"ドイツ",city:"フランクフルト",loc:"city"},
+  "x-jw-hanoi":{name:"JWマリオット・ホテル・ハノイ",brand:"jw",country:"ベトナム",city:"ハノイ",loc:"city"},
+  "x-itc-bengaluru":{name:"ITC Gardenia, Bengaluru",brand:"luxcol",country:"インド",city:"ベンガルール",loc:"city"}
+};
+const PRESET_STAYS=[
+  ["x-publichouse-bkk","2026-01-11",2,12972],["x-westin-dhaka","2026-01-13",3,11196],["x-mea-bangkok","2026-01-16",2,740],
+  ["x-fairfield-kunshan","2026-03-02",3,3708],["westin-osaka","2026-03-05",3,14052],
+  ["cy-shijo","2026-04-03",1,500],["ritz-osaka","2026-04-04",1,1070],["x-jw-saigon","2026-04-08",4,17410],
+  ["sheraton-miyako-osaka","2026-04-13",1,2482],["x-gekko-frankfurt","2026-04-20",6,27664],
+  ["x-ortea-sicily","2026-04-29",3,30027],["x-bankside-london","2026-05-02",1,7111],["x-bankside-london","2026-05-04",1,7759],
+  ["x-sheraton-fra","2026-05-07",1,6541],["x-jw-hanoi","2026-06-15",3,15228],["x-mea-bangkok","2026-06-18",4,6580],
+  ["x-itc-bengaluru","2026-06-22",2,5334]
+];
+window.__importShun=()=>{
+  if(!confirm("Shunの2026年履歴（17滞在・41泊）を取り込みます。よろしいですか？")) return;
+  for(const hid in PRESET_HOTELS) if(!state.hotels[hid]&&!byId[hid]) state.hotels[hid]=PRESET_HOTELS[hid];
+  let added=0;
+  PRESET_STAYS.forEach(([hid,d,n,earn])=>{
+    if(!state.stays[hid]) state.stays[hid]=[];
+    if(!state.stays[hid].some(s=>s.d===d)){ state.stays[hid].push({d,n,earn}); added++; }
+    state.stays[hid].sort((a,b)=>a.d<b.d?-1:1);
+  });
+  save(); render(); notify(`${added}件の宿泊を取り込みました。`);
+};
+
+render(); switchTab("world");
 if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v="+APP_VERSION).catch(()=>{});
+
 </script>
 </body>
 </html>
