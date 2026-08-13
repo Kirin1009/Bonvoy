@@ -106,7 +106,7 @@ function num(v) { return (v === '' || v === null || v === undefined) ? undefined
 function bool(v) { return v === true || v === 'TRUE' || v === 'true' || v === 1 || v === '1'; }
 
 function readState(ss) {
-  var st = { stays: {}, hotels: {}, scores: {}, wants: {}, radius: 800, car: 'm3' };
+  var st = { stays: {}, hotels: {}, scores: {}, wants: {}, bonus: {}, radius: 800, car: 'm3' };
 
   rowsOf(sheetOf(ss, 'stays')).forEach(function (r) {
     var hid = String(r[0] || '').trim(), d = asDate(r[2]);
@@ -147,6 +147,8 @@ function readState(ss) {
     var k = String(r[0] || '').trim();
     if (k === 'radius') st.radius = Number(r[1]) || 800;
     if (k === 'car') st.car = String(r[1] || 'm3');
+    var mb = k.match(/^ボーナス泊 (\d{4})$/);           // 「ボーナス泊 2026」= 15
+    if (mb) st.bonus[mb[1]] = Number(r[1]) || 0;
   });
 
   return st;
@@ -161,9 +163,12 @@ function readState(ss) {
  * どの規則でも「片方にしかない記録が消える」ことはない。
  */
 function mergeState(remote, local) {
-  var out = { stays: {}, hotels: {}, scores: {}, wants: {},
+  var out = { stays: {}, hotels: {}, scores: {}, wants: {}, bonus: {},
               radius: local.radius || remote.radius || 800,
               car: local.car || remote.car || 'm3' };
+  // ボーナス泊は年ごとの手入力。和集合でローカル優先（端末で直した直後を尊重する）
+  Object.keys(remote.bonus || {}).forEach(function (y) { out.bonus[y] = remote.bonus[y]; });
+  Object.keys(local.bonus  || {}).forEach(function (y) { out.bonus[y] = local.bonus[y]; });
 
   var hids = {};
   Object.keys(remote.stays || {}).forEach(function (h) { hids[h] = 1; });
@@ -226,13 +231,16 @@ function writeState(ss, st) {
   forceText(shWants, 2);
   replaceRows(shWants, rows);
 
-  replaceRows(sheetOf(ss, 'meta'), [
-    ['radius', st.radius], ['car', st.car],
+  var meta = [['radius', st.radius], ['car', st.car]];
+  Object.keys(st.bonus || {}).sort().forEach(function (y) {
+    meta.push(['ボーナス泊 ' + y, st.bonus[y]]);
+  });
+  replaceRows(sheetOf(ss, 'meta'), meta.concat([
     ['最終同期', Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss')],
     ['宿泊件数', Object.keys(st.stays).reduce(function (a, h) { return a + st.stays[h].length; }, 0)],
     ['通算泊数', Object.keys(st.stays).reduce(function (a, h) {
       return a + st.stays[h].reduce(function (b, s) { return b + (s.n || 1); }, 0); }, 0)]
-  ]);
+  ]));
 }
 
 function forceText(sh, col) {                   // 日付列を書式「書式なしテキスト」に固定して自動日付化を止める
