@@ -682,7 +682,9 @@ function drawWorld(prog){
         style="left:${wpct(WORLD_CX,WORLD_W)};top:${wpct(gy,WORLD_H)};`+
         `width:${wpct(gw,WORLD_W)};opacity:${gop}">`;
       /* 銘板: 何の門で、あと何泊かを門の下に掲げる */
-      const pw=gw*0.72, ph=pw*0.20, py=gy-gw*GATE_AR*0.06;
+      /* 銘板は門の足元より下に置く。v3の門は脚・幟が根本まで伸びていて、
+         門に重ねると意匠を隠すうえに文字が読めない。 */
+      const pw=gw*0.72, ph=pw*0.20, py=gy+ph*1.05;
       const fs=ph*0.52, c=TIER_COLOR[nt[1]]||["#C7973F","#F6E7C1"];
       svg+=`<g opacity="${gop}" transform="translate(${WORLD_CX},${py})">
         <rect x="${-pw/2}" y="${-ph}" width="${pw}" height="${ph}" rx="${ph*0.28}"
