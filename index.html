@@ -101,6 +101,27 @@
     padding:6px 16px;font-size:12.5px;font-weight:700;box-shadow:0 2px 8px rgba(74,59,46,.15)}
   @keyframes stampin{0%{transform:scale(2.4);opacity:0}55%{transform:scale(0.94);opacity:1}100%{transform:scale(1)}}
   @keyframes stampout{to{opacity:0;transform:scale(0.96)}}
+  /* ===== ティア到達の祝賀 ===== */
+  #stampfx.tier{background:radial-gradient(closest-side,rgba(24,20,14,.62),rgba(24,20,14,.88))}
+  #stampfx.tier.bye .tierfx{animation:tierout .6s forwards}
+  .tierfx{position:relative;display:flex;flex-direction:column;align-items:center;width:100%}
+  .tierburst{position:absolute;top:50%;left:50%;width:520px;height:520px;margin:-260px 0 0 -260px;
+    border-radius:50%;background:radial-gradient(closest-side,var(--tc),transparent 70%);
+    opacity:0;animation:tierburst 1.5s cubic-bezier(.16,1,.3,1) forwards}
+  .tiergate{width:78%;max-width:330px;display:block;filter:drop-shadow(0 0 26px var(--tc));
+    animation:tiergate 1.5s cubic-bezier(.16,1,.3,1) both}
+  .tiername{margin-top:6px;font-size:34px;font-weight:800;letter-spacing:.3em;color:var(--tt);
+    text-shadow:0 0 22px var(--tc),0 2px 6px rgba(0,0,0,.6);
+    font-family:'Hiragino Mincho ProN','Yu Mincho',serif;
+    animation:tiername .9s .45s cubic-bezier(.2,1.5,.4,1) both}
+  .tiersub{margin-top:8px;padding:6px 18px;border-radius:999px;font-size:12.5px;font-weight:700;
+    color:var(--tt);border:1.5px solid var(--tc);background:rgba(20,18,14,.6);letter-spacing:.16em;
+    animation:tiername .9s .68s cubic-bezier(.2,1.5,.4,1) both}
+  @keyframes tierburst{0%{opacity:0;transform:scale(.2)}35%{opacity:.85}100%{opacity:0;transform:scale(1.25)}}
+  @keyframes tiergate{0%{opacity:0;transform:scale(.32) translateY(38px)}
+    60%{opacity:1;transform:scale(1.04) translateY(0)}100%{opacity:1;transform:scale(1)}}
+  @keyframes tiername{0%{opacity:0;transform:scale(1.9)}60%{opacity:1;transform:scale(.96)}100%{transform:scale(1)}}
+  @keyframes tierout{to{opacity:0;transform:scale(1.06)}}
   /* ===== v1.0.0: 世界・記録・フォーム ===== */
   .wboard{margin:14px -18px 0;overflow:hidden;border-radius:0 0 18px 18px}
   .wboard .wenvwrap,.wboard{position:relative}
@@ -185,6 +206,12 @@
       <select id="carSel" class="selbox"><option value="m3">紫のM3ツーリング（俊）</option><option value="220">緑の220クーペ（紗也乃）</option></select>
     </div>
     <div class="sect">
+      <div class="eyebrow">テスト</div>
+      <div class="formrow2"><label><input type="checkbox" id="testMode">同じ日でも何度でもチェックインする</label></div>
+      <p class="settext" id="testNote"></p>
+      <div class="fbtnrow"><button class="btn" onclick="window.__purgeTest()">テスト記録を消す</button></div>
+    </div>
+    <div class="sect">
       <div class="eyebrow">スプレッドシート同期</div>
       <p class="settext" id="syncState">未設定です。記録はこの端末にしかありません。</p>
       <div class="formrow"><label>同期URL（Apps Scriptのウェブアプリ）</label>
@@ -228,7 +255,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.3.0";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -474,9 +501,12 @@ const totalNights=()=>stayList().reduce((a,s)=>a+(s.n||1),0);
 function addStay(hid,rec){
   if(!state.stays[hid]) state.stays[hid]=[];
   if(state.stays[hid].some(s=>s.d===rec.d)){ notify("同じチェックイン日の記録が既にあります。"); return false; }
+  const before=nightsInYear(thisYear());
   state.stays[hid].push(rec);
   state.stays[hid].sort((a,b)=>a.d<b.d?-1:1);
-  save(); pendingAdvance=true; return true;
+  save(); pendingAdvance=true;
+  pendingTier=tierCrossed(before, nightsInYear(thisYear()));
+  return true;
 }
 function slugify(name){
   let s="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,28);
@@ -507,6 +537,8 @@ const WORLD_GATES=[[10,"assets/world/gate-silver-10.webp"],[25,"assets/world/gat
   [100,"assets/world/gate-ambassador-100.webp"]];
 const GATE_AR=341/512;                    /* 門素材の縦横比。幅だけ指定し高さはこれで出す */
 const GATE_TRAVEL={y:[397,728], w:[218,432], op:[.58,1]};
+const TIER_COLOR={"シルバー":["#C9CDD4","#EEF1F5"],"ゴールド":["#C7973F","#F6E7C1"],
+  "プラチナ":["#9FB3C8","#EAF1F8"],"チタン":["#7C8794","#DDE3EA"],"アンバサダー":["#B63B2E","#F0D9A6"]};
 const WORLD_DEDICATED={"jw-phuket":"hotel-jw-phuket.webp","w-osaka":"hotel-w-osaka.webp",
   "cy-nagoya":"hotel-courtyard-nagoya.webp","marriott-shuzenji":"hotel-izu-marriott.webp",
   "moxy-honmachi":"hotel-moxy-osaka.webp"};
@@ -598,10 +630,21 @@ function drawWorld(prog){
     if(g){
       const prev=TIERS[TIERS.findIndex(t=>t[0]===nt[0])-1];
       const from=prev?prev[0]:0, t=Math.min(1,Math.max(0,(yn-from)/(nt[0]-from)));
+      const gy=lerp(GATE_TRAVEL.y[0],GATE_TRAVEL.y[1],t);
       const gw=lerp(GATE_TRAVEL.w[0],GATE_TRAVEL.w[1],t);
+      const gop=lerp(GATE_TRAVEL.op[0],GATE_TRAVEL.op[1],t);
       html+=`<img class="wgate" src="${g[1]}" alt="${esc(nt[1])}の門"
-        style="left:${wpct(WORLD_CX,WORLD_W)};top:${wpct(lerp(GATE_TRAVEL.y[0],GATE_TRAVEL.y[1],t),WORLD_H)};`+
-        `width:${wpct(gw,WORLD_W)};opacity:${lerp(GATE_TRAVEL.op[0],GATE_TRAVEL.op[1],t)}">`;
+        style="left:${wpct(WORLD_CX,WORLD_W)};top:${wpct(gy,WORLD_H)};`+
+        `width:${wpct(gw,WORLD_W)};opacity:${gop}">`;
+      /* 銘板: 何の門で、あと何泊かを門の下に掲げる */
+      const pw=gw*0.72, ph=pw*0.20, py=gy-gw*GATE_AR*0.06;
+      const fs=ph*0.52, c=TIER_COLOR[nt[1]]||["#C7973F","#F6E7C1"];
+      svg+=`<g opacity="${gop}" transform="translate(${WORLD_CX},${py})">
+        <rect x="${-pw/2}" y="${-ph}" width="${pw}" height="${ph}" rx="${ph*0.28}"
+          fill="#2A2C3A" stroke="${c[0]}" stroke-width="${Math.max(ph*0.07,1.2)}" opacity=".92"/>
+        <text x="0" y="${-ph*0.30}" text-anchor="middle" font-size="${fs}" font-weight="700"
+          fill="${c[1]}" letter-spacing="${fs*0.10}"
+          font-family="'Hiragino Mincho ProN','Yu Mincho',serif">${esc(nt[1])} ${nt[0]}泊</text></g>`;
     }
   }
   /* 愛車: 最新滞在のマスの上（＝現在地）。視点そのものなので判子とは重ねない */
@@ -617,8 +660,28 @@ function drawWorld(prog){
      <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
      <feDisplacementMap in="SourceGraphic" scale="1.2"/></filter></defs>${svg}</svg>`;
 }
+/* ティア到達の祝賀: 門が輝いて開き、称号が浮かび上がって、紋章が残る */
+function tierCelebrate(tier){
+  const el=document.getElementById("stampfx");
+  const g=WORLD_GATES.find(g=>g[0]===tier[0]);
+  const c=TIER_COLOR[tier[1]]||["#C7973F","#F6E7C1"];
+  el.innerHTML=`<div class="tierfx" style="--tc:${c[0]};--tt:${c[1]}">
+    <div class="tierburst"></div>
+    ${g?`<img class="tiergate" src="${g[1]}" alt="">`:""}
+    <div class="tiername">${esc(tier[1])}</div>
+    <div class="tiersub">${tier[0]}泊 達成</div>
+  </div>`;
+  el.classList.remove("bye"); el.classList.add("on","tier");
+  clearTimeout(fxT1); clearTimeout(fxT2);
+  fxT1=setTimeout(()=>el.classList.add("bye"),2600);
+  fxT2=setTimeout(()=>{ el.classList.remove("on","bye","tier"); el.innerHTML=""; },3200);
+}
+/* 記録前後でティアを跨いだかを見る */
+function tierCrossed(before,after){
+  return TIERS.find(t=>before<t[0]&&after>=t[0])||null;
+}
 /* 記録直後に世界を1滞在ぶん流す */
-let worldAnim=null, pendingAdvance=false;
+let worldAnim=null, pendingAdvance=false, pendingTier=null;
 addEventListener("resize",()=>{ if(curTab==="world"&&!worldAnim) drawWorld(0); });
 function worldAdvance(){
   if(document.getElementById("worldView").style.display==="none") return;
@@ -753,6 +816,7 @@ function render(){
   const n=uniq(stayList().map(s=>s.hid)).length;
   document.getElementById("total").innerHTML=`${totalNights()}<span style="font-size:10px">泊</span>・${n}<span style="font-size:10px">宿</span>`;
   if(curTab==="world"){ renderWorld(); if(pendingAdvance){ pendingAdvance=false; worldAdvance(); } }
+  if(pendingTier){ const t=pendingTier; pendingTier=null; setTimeout(()=>tierCelebrate(t), curTab==="world"?820:200); }
   if(curTab==="rec") renderRec();
   if(curTab==="book") renderBook();
   if(curTab==="rally") renderRally();
@@ -1037,7 +1101,7 @@ function stampFx(i){
   const seed=byId[i.id];
   el.innerHTML=`<div class="seal">${seed?hotelSeal(seed,{size:150}):`<svg viewBox="-45 -45 90 90" width="150" height="150">${worldSeal((i.name||"泊")[0], i.cat==="luxury"?"hex":(i.cat==="select"?"sq":"circ"),-5).replace(/^<svg[^>]*>|<\/svg>$/g,"")}</svg>`}</div>
     <div class="fxname">${esc(i.name)}　${esc(today())}</div>`;
-  el.classList.remove("bye"); el.classList.add("on");
+  el.classList.remove("bye","tier"); el.classList.add("on");
   clearTimeout(fxT1); clearTimeout(fxT2);
   fxT1=setTimeout(()=>el.classList.add("bye"),1400);
   fxT2=setTimeout(()=>el.classList.remove("on","bye"),1900);
@@ -1061,7 +1125,15 @@ document.getElementById("stampBtn").addEventListener("click",()=>{
   {enableHighAccuracy:true,timeout:12000,maximumAge:30000});
 });
 function gpsStamp(h){
-  if(addStay(h.id,{d:today(),n:1})){ render(); stampFx(hotelInfo(h.id)); }
+  const rec={d:today(),n:1};
+  if(state.test){                                  /* テスト: 空いている日まで1日ずつずらす */
+    const used=new Set((state.stays[h.id]||[]).map(s=>s.d));
+    const t=new Date(rec.d+"T00:00:00");
+    while(used.has(`${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`)) t.setDate(t.getDate()+1);
+    rec.d=`${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`;
+    rec.t=1;                                       /* テスト記録の印。同期には送らない */
+  }
+  if(addStay(h.id,rec)){ render(); stampFx(hotelInfo(h.id)); }
 }
 window.__gps=id=>{ closeSheet(); gpsStamp(byId[id]); };
 
@@ -1111,7 +1183,12 @@ async function syncNow(quiet){
   if(syncing) return;
   syncing=true;
   try{
-    const {sync,...body}=state;                    /* 合言葉はシートへ送らない */
+    const {sync,test,...body}=state;               /* 合言葉とテストフラグはシートへ送らない */
+    body.stays={};                                 /* テスト記録はシートへ送らない */
+    for(const h in state.stays){
+      const real=state.stays[h].filter(s=>!s.t);
+      if(real.length) body.stays[h]=real;
+    }
     const res=await fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
       body:JSON.stringify({action:"sync",token:c.token,state:body})});
     const j=await res.json();
@@ -1139,10 +1216,41 @@ window.__syncSave=()=>{
 };
 window.__syncNow=()=>syncNow(false);
 
+/* ---------- テストモード ---------- */
+function testCount(){ return stayList().filter(s=>s.t).length; }
+function testNote(){
+  const el=document.getElementById("testNote"); if(!el) return;
+  const n=testCount();
+  el.textContent = state.test
+    ? `オン。押すたびに空いている日へ1日ずつずらして記録します。テスト記録は${n}件（シートにもバックアップにも送りません）。`
+    : (n?`オフ。テスト記録が${n}件残っています。`:"オフ。通常どおり、同じ日の二重記録は防ぎます。");
+}
+const testEl=document.getElementById("testMode");
+if(testEl){
+  testEl.checked=!!state.test;
+  testEl.addEventListener("change",e=>{ state.test=e.target.checked; save(); testNote(); });
+}
+testNote();
+window.__purgeTest=()=>{
+  const n=testCount();
+  if(!n){ notify("テスト記録はありません。"); return; }
+  if(!confirm(`テスト記録${n}件を削除します。よろしいですか？`)) return;
+  for(const h in state.stays){
+    state.stays[h]=state.stays[h].filter(s=>!s.t);
+    if(!state.stays[h].length) delete state.stays[h];
+  }
+  save(); reindex(); render(); testNote(); notify(`テスト記録${n}件を削除しました。`);
+};
+
 /* ---------- バックアップ / 履歴取り込み ---------- */
 window.__backupOut=()=>{
   const ta=document.getElementById("bkarea");
-  const {sync,...body}=state;                       /* 合言葉をバックアップに載せない */
+  const {sync,test,...body}=state;                  /* 合言葉・テスト記録をバックアップに載せない */
+  body.stays={};
+  for(const h in state.stays){
+    const real=state.stays[h].filter(s=>!s.t);
+    if(real.length) body.stays[h]=real;
+  }
   ta.value=JSON.stringify(body); ta.select();
   try{ document.execCommand("copy"); notify("バックアップJSONをコピーしました。"); }catch(e){ notify("表示したJSONを手動でコピーしてください。"); }
 };
