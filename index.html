@@ -255,7 +255,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.3.1";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -590,7 +590,8 @@ function renderWorld(){
   b.innerHTML=`<img class="wenv" src="${WORLD_ENV}" alt=""><div class="wlayer" id="wlayer"></div>`;
   drawWorld(0);
 }
-/* prog=0で静止。記録直後は0→1へ補間して世界全体が1滞在ぶん手前へ流れる */
+/* prog=0で静止。記録直後は -1→0 へ補間し、世界全体が1滞在ぶん手前（自分の方）へ流れる。
+   zは大きいほど手前なので、progを負から0へ動かすとz が増えて＝近づいてくる。 */
 function drawWorld(prog){
   const layer=document.getElementById("wlayer"); if(!layer) return;
   const px=(layer.clientWidth||390)/WORLD_W;      /* 自然px→表示px */
@@ -689,7 +690,7 @@ function worldAdvance(){
   const t0=performance.now(), DUR=820, ease=x=>1-Math.pow(1-x,3);
   worldAnim=requestAnimationFrame(function f(now){
     const k=Math.min(1,(now-t0)/DUR);
-    drawWorld(1-ease(k));                          /* 新着は奥から現れて所定位置へ */
+    drawWorld(ease(k)-1);                          /* 世界が手前へ流れる（z=0地平線→z=1手前） */
     worldAnim = k<1 ? requestAnimationFrame(f) : null;
   });
 }
