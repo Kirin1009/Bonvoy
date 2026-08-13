@@ -1,4 +1,4 @@
-# Road Window Gate Contract v2
+# Road Window Gate Contract v3
 
 ## Purpose
 
@@ -10,18 +10,21 @@ the active stamp, cars, and the road remain visible.
 
 | Tier | Asset | Direction |
 | --- | --- | --- |
-| Silver 10 | `assets/world/gate-silver-10.webp` | Simple silver arch |
-| Gold 25 | `assets/world/gate-gold-25.webp` | Brass canopy |
-| Platinum 50 | `assets/world/gate-platinum-50.webp` | Double arch with lamps |
-| Titanium 75 | `assets/world/gate-titanium-75.webp` | Faceted stone pillars |
-| Ambassador 100 | `assets/world/gate-ambassador-100.webp` | Black lacquer and deep vermilion grand gate |
+| Silver 10 | `assets/world/gate-silver-10.webp` | Round medallion over one calm silver arch. |
+| Gold 25 | `assets/world/gate-gold-25.webp` | Sunburst crown, brass arch, and two outer pennants. |
+| Platinum 50 | `assets/world/gate-platinum-50.webp` | Tall nested arches, four lantern crowns, and an ice-blue diamond. |
+| Titanium 75 | `assets/world/gate-titanium-75.webp` | Separated faceted obelisks with a thin angular beam and crystal keystone. |
+| Ambassador 100 | `assets/world/gate-ambassador-100.webp` | Singular two-tier black-lacquer roof, vermilion standards, and ceremonial crest. |
 
-All five are `512 x 341` transparent WebP files. Their combined size is about
-74 KB. Do not bake them into the fixed road-window base.
+All five are `512 x 341` transparent WebP files with real alpha. Their
+combined size is about 75 KB. Do not bake them into the fixed road-window
+base.
 
 ## Placement
 
-Use `design/proposals/road-window-grand-highway-slots.json` schema v2.
+Use `design/proposals/road-window-grand-highway-slots.json` schema v2. The
+existing filenames and aspect ratio are retained, so this art replacement
+needs no placement-code change.
 
 - `baselineY` is the tile-boundary y coordinate where the gate feet meet the
   road shoulders.
@@ -39,10 +42,12 @@ The supplied horizon boundary is between `far` and `mid`; the near boundary is
 between `next` and `current`. This keeps the gate in the progression path and
 leaves both the current stamp and the two pawns inside valid tiles.
 
-## Integration Notes For Coco
+## Recognition Notes
 
-Replace the previous `gate.center` and `gate.size` reading with the v2 width
-and baseline contract. The current `design/mock-road-window-base.html` still
-contains the v1 inline JSON and a temporary gate calculation, so update its
-inline data when integrating. The gate image should never occupy the current
-stamp tile as an opaque overlay.
+- Do not add a generic color filter over these files. The silhouette is the
+  tier signal: circle, sunburst, double halo, crystal tower, then double roof.
+- Preserve enough horizon clearance to read the upper crest at the small
+  horizon size. The Ambassador roof may be wider than the lane but its legs
+  must still sit on the shoulders.
+- See `design/proposals/tier-gate-identity-v3.md` for the arrival sequence;
+  it reuses these files and adds no mandatory image asset.
