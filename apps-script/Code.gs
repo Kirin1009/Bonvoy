@@ -78,9 +78,28 @@ function rowsOf(sh) {
   return sh.getRange(2, 1, last - 1, sh.getLastColumn()).getValues();
 }
 
-function asDate(v) {                            // シート上で日付型になっていても文字列に戻す
-  if (v instanceof Date) return Utilities.formatDate(v, 'JST', 'yyyy-MM-dd');
-  return String(v || '').trim();
+/**
+ * 日付は何が来ても 'yyyy-MM-dd' に正規化する。
+ * Sheetsは '2026-08-11' を書き込むと勝手に日付型のセルにするので、読み戻すとDateで返る。
+ * これを素通しすると 'Tue Aug 11 2026 00:00:00 GMT+0700' のような別のキーになり、
+ * 同じ宿泊がもう1件として増える（v1.3.1で実際に倍増した）。ここで必ず潰す。
+ */
+function asDate(v) {
+  var tz = Session.getScriptTimeZone() || 'Asia/Tokyo';
+  if (v instanceof Date) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+  var s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  // "Tue Aug 11 2026 00:00:00 GMT+0700" — 時差で1日ずれないよう暦の日付をそのまま拾う
+  var MON = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+              Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+  m = s.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+  if (m && MON[m[1]]) {
+    return m[3] + '-' + ('0' + MON[m[1]]).slice(-2) + '-' + ('0' + m[2]).slice(-2);
+  }
+  var d = new Date(s);
+  return isNaN(d.getTime()) ? '' : Utilities.formatDate(d, tz, 'yyyy-MM-dd');
 }
 
 function num(v) { return (v === '' || v === null || v === undefined) ? undefined : Number(v); }
@@ -152,8 +171,15 @@ function mergeState(remote, local) {
 
   Object.keys(hids).forEach(function (hid) {
     var byDate = {};
-    (remote.stays[hid] || []).forEach(function (s) { if (s && s.d) byDate[s.d] = s; });
-    (local.stays[hid]  || []).forEach(function (s) { if (s && s.d) byDate[s.d] = s; });
+    var put = function (s) {                    // キーは必ず正規化した日付。ここが崩れると重複が生える
+      if (!s) return;
+      var d = asDate(s.d);
+      if (!d) return;
+      s.d = d;
+      byDate[d] = s;
+    };
+    (remote.stays[hid] || []).forEach(put);
+    (local.stays[hid]  || []).forEach(put);     // 同日はローカルが後勝ち
     var list = Object.keys(byDate).sort().map(function (d) { return byDate[d]; });
     if (list.length) out.stays[hid] = list;
   });
@@ -174,12 +200,14 @@ function writeState(ss, st) {
   rows = [];
   Object.keys(st.stays).sort().forEach(function (hid) {
     st.stays[hid].forEach(function (s) {
-      rows.push([hid, (st.hotels[hid] || {}).name || '', s.d, s.n || 1,
+      rows.push([hid, (st.hotels[hid] || {}).name || '', asDate(s.d), s.n || 1,
                  s.price === undefined ? '' : s.price, s.pts ? 'TRUE' : '',
                  s.upg ? 'TRUE' : '', s.earn === undefined ? '' : s.earn, s.memo || '']);
     });
   });
-  replaceRows(sheetOf(ss, 'stays'), rows);
+  var shStays = sheetOf(ss, 'stays');
+  forceText(shStays, 3);
+  replaceRows(shStays, rows);
 
   rows = Object.keys(st.hotels).sort().map(function (hid) {
     var h = st.hotels[hid];
@@ -193,16 +221,22 @@ function writeState(ss, st) {
   });
   replaceRows(sheetOf(ss, 'scores'), rows);
 
-  rows = Object.keys(st.wants).sort().map(function (hid) { return [hid, st.wants[hid] || '']; });
-  replaceRows(sheetOf(ss, 'wants'), rows);
+  rows = Object.keys(st.wants).sort().map(function (hid) { return [hid, asDate(st.wants[hid])]; });
+  var shWants = sheetOf(ss, 'wants');
+  forceText(shWants, 2);
+  replaceRows(shWants, rows);
 
   replaceRows(sheetOf(ss, 'meta'), [
     ['radius', st.radius], ['car', st.car],
-    ['最終同期', Utilities.formatDate(new Date(), 'JST', 'yyyy-MM-dd HH:mm:ss')],
+    ['最終同期', Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd HH:mm:ss')],
     ['宿泊件数', Object.keys(st.stays).reduce(function (a, h) { return a + st.stays[h].length; }, 0)],
     ['通算泊数', Object.keys(st.stays).reduce(function (a, h) {
       return a + st.stays[h].reduce(function (b, s) { return b + (s.n || 1); }, 0); }, 0)]
   ]);
+}
+
+function forceText(sh, col) {                   // 日付列を書式「書式なしテキスト」に固定して自動日付化を止める
+  sh.getRange(1, col, sh.getMaxRows(), 1).setNumberFormat('@');
 }
 
 function replaceRows(sh, rows) {
