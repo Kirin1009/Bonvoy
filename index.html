@@ -255,7 +255,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.3.1";
+const APP_VERSION = "1.3.2";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -443,6 +443,20 @@ function distance(a,b){
 }
 const pad2=v=>String(v).padStart(2,"0");
 const today=()=>{ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
+const ymd=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+/* 日付は必ず YYYY-MM-DD。シートを往復するとセルが日付型になり "Tue Aug 11 2026 …" で返ることがある。
+   その文字列には書き手の時差(+0700など)が付くので、new Date() に通すと端末の時差で1日ずれる。
+   暦の上の日付をそのまま読むのが正しいので、文字列から直接拾う。 */
+const MON3={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+const normDate=v=>{
+  const s=String(v??"").trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m=s.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);      /* "Tue Aug 11 2026 …" */
+  if(m&&MON3[m[1]]) return `${m[3]}-${pad2(MON3[m[1]])}-${pad2(m[2])}`;
+  const d=new Date(s);
+  return isNaN(d.getTime()) ? "" : ymd(d);
+};
 const thisYear=()=>new Date().getFullYear();
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -466,6 +480,26 @@ let state={stays:{}, hotels:{}, scores:{}, wants:{}, radius:800, car:"m3"};
   }catch(e){}
 })();
 for(const k of ["stays","hotels","scores","wants"]) if(!state[k]) state[k]={};
+(function repairDates(){        /* v1.3.2: 同期で日付がDate文字列になった記録を正規化して畳む */
+  let fixed=0;
+  for(const hid in state.stays){
+    const seen={}, out=[];
+    for(const s of state.stays[hid]){
+      const d=normDate(s.d);
+      if(!d){ fixed++; continue; }
+      if(d!==s.d) fixed++;
+      if(seen[d]){                /* 同じ日が2件になったら情報の多い方を残す */
+        if(Object.keys(s).length>Object.keys(seen[d]).length) Object.assign(seen[d],s,{d});
+        fixed++; continue;
+      }
+      const r=Object.assign({},s,{d}); seen[d]=r; out.push(r);
+    }
+    out.sort((a,b)=>a.d<b.d?-1:1);
+    if(out.length) state.stays[hid]=out; else delete state.stays[hid];
+  }
+  for(const hid in state.wants){ const d=normDate(state.wants[hid]); if(d) state.wants[hid]=d; }
+  if(fixed) try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}
+})();
 reindex();
 try{ if(!localStorage.getItem(KEY2)) localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}  /* v1→v2移行を即時確定 */
 const save=()=>{ try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } syncSoon(); };
@@ -1158,11 +1192,16 @@ document.getElementById("carSel").addEventListener("change",e=>{ state.car=e.tar
    マージは足し算のみ（サーバ側 mergeState と同じ規則）。同期で記録が減ることはない。 */
 let syncT, syncing=false;
 const syncCfg=()=>state.sync||{};
+const localStamp=iso=>{        /* サーバはUTCのISOを返すので端末の時刻で表示する */
+  const d=new Date(iso);
+  return isNaN(d.getTime()) ? String(iso).replace("T"," ").slice(0,16)
+                            : `${ymd(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
 function syncStateText(){
   const el=document.getElementById("syncState"); if(!el) return;
   const c=syncCfg();
   el.textContent = !c.url ? "未設定です。記録はこの端末にしかありません。"
-    : c.at ? `最終同期: ${c.at.replace("T"," ").slice(0,16)}`
+    : c.at ? `最終同期: ${localStamp(c.at)}`
     : "設定済み。まだ一度も同期していません。";
 }
 function mergeIn(remote){                          /* サーバから返った全状態を手元へ足す */
@@ -1171,7 +1210,12 @@ function mergeIn(remote){                          /* サーバから返った�
   for(const hid in (remote.stays||{})){
     const cur=state.stays[hid]||(state.stays[hid]=[]);
     const seen=new Set(cur.map(s=>s.d));
-    remote.stays[hid].forEach(s=>{ if(s&&s.d&&!seen.has(s.d)){ cur.push(s); seen.add(s.d); added++; } });
+    remote.stays[hid].forEach(s=>{
+      if(!s) return;
+      const d=normDate(s.d);                       /* 壊れた日付はここで弾く（取り込んで増やさない） */
+      if(!d||seen.has(d)) return;
+      cur.push(Object.assign({},s,{d})); seen.add(d); added++;
+    });
     cur.sort((a,b)=>a.d<b.d?-1:1);
   }
   for(const k of ["hotels","scores","wants"])
