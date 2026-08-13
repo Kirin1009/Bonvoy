@@ -228,7 +228,9 @@
         <button class="btn primary" onclick="window.__syncNow()">いま同期する</button>
         <button class="btn" onclick="window.__syncSave()">設定を保存</button>
       </div>
-      <p class="settext">記録は端末とシートの両方に残ります。同期は<b>足し算だけ</b>で、どちらか片方にしかない宿泊が消えることはありません。</p>
+      <div class="fbtnrow"><button class="btn" onclick="window.__syncPull()">シートの内容で置き換える</button></div>
+      <p class="settext">記録は端末とシートの両方に残ります。同期は<b>足し算だけ</b>で、どちらか片方にしかない宿泊が消えることはありません。<br>
+      <b>記録を消したいとき</b>は、スプレッドシートで行を削除してから「シートの内容で置き換える」を押してください。ふつうの同期では消えた記録が戻ってきます。</p>
     </div>
     <div class="sect">
       <div class="eyebrow">バックアップ / 取り込み</div>
@@ -261,7 +263,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.4.0";
+const APP_VERSION = "1.5.0";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -1299,6 +1301,36 @@ window.__syncSave=()=>{
   syncStateText(); notify(url?"同期設定を保存しました。":"同期設定を消しました。");
 };
 window.__syncNow=()=>syncNow(false);
+/* シートの内容で端末を置き換える。
+   通常の同期は足し算なので、シートで消した記録は端末に残ったまま次の同期で戻ってくる。
+   「シートで消してからアプリでも消す」という手順を1回で済ませるための唯一の削除経路。 */
+window.__syncPull=async()=>{
+  const c=syncCfg();
+  if(!c.url||!c.token){ notify("同期URLと合言葉を入れて「設定を保存」してください。","err"); return; }
+  if(!confirm("この端末の記録を、シートの内容でそっくり置き換えます。\nシートに無い記録はこの端末から消えます。よろしいですか？")) return;
+  try{
+    const res=await fetch(c.url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({action:"pull",token:c.token})});
+    const j=await res.json();
+    if(!j.ok) throw new Error(j.error||"取得に失敗しました");
+    const r=j.state||{}, keep=(state.stays&&Object.keys(state.stays).length)?stayList().filter(s=>s.t):[];
+    state.stays={}; state.hotels=r.hotels||{}; state.scores=r.scores||{};
+    state.wants=r.wants||{}; state.bonus=r.bonus||{};
+    for(const hid in (r.stays||{})){
+      const list=r.stays[hid].map(s=>Object.assign({},s,{d:normDate(s.d)})).filter(s=>s.d);
+      if(list.length) state.stays[hid]=list.sort((a,b)=>a.d<b.d?-1:1);
+    }
+    keep.forEach(s=>{                              /* テスト記録はシートに無いので取り置く */
+      const {hid,idx,...rec}=s;
+      (state.stays[hid]=state.stays[hid]||[]).push(rec);
+      state.stays[hid].sort((a,b)=>a.d<b.d?-1:1);
+    });
+    state.sync={...c, at:new Date().toISOString()};
+    try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}
+    reindex(); render(); syncStateText();
+    notify(`シートの内容にそろえました（${stayList().filter(s=>!s.t).length}件）。`);
+  }catch(e){ notify("置き換えできませんでした: "+e.message,"err"); }
+};
 
 /* ---------- テストモード ---------- */
 function testCount(){ return stayList().filter(s=>s.t).length; }
