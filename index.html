@@ -206,6 +206,12 @@
       <select id="carSel" class="selbox"><option value="m3">紫のM3ツーリング（俊）</option><option value="220">緑の220クーペ（紗也乃）</option></select>
     </div>
     <div class="sect">
+      <div class="eyebrow">ボーナス泊</div>
+      <p class="settext">クレジットカード特典など、実際には泊まっていない加算ぶん。<b>ティア進捗と年間泊数にだけ</b>効きます（判子・通算泊数・双六のマスは実泊のまま）。</p>
+      <div id="bonusRows"></div>
+      <div class="fbtnrow"><button class="btn" onclick="window.__bonusAdd()">別の年を足す</button></div>
+    </div>
+    <div class="sect">
       <div class="eyebrow">テスト</div>
       <div class="formrow2"><label><input type="checkbox" id="testMode">同じ日でも何度でもチェックインする</label></div>
       <p class="settext" id="testNote"></p>
@@ -231,7 +237,7 @@
         <button class="btn" onclick="window.__backupOut()">書き出し</button>
         <button class="btn" onclick="window.__backupIn()">取り込み</button>
       </div>
-      <div class="fbtnrow"><button class="btn" onclick="window.__importShun()">Shunの2026年履歴（41泊）を取り込む</button></div>
+      <div class="fbtnrow"><button class="btn" onclick="window.__importShun()">Shunの宿泊履歴（26滞在・59泊）を取り込む</button></div>
     </div>
     <div class="sect">
       <div class="eyebrow">この帳について</div>
@@ -255,7 +261,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.3.1";
+const APP_VERSION = "1.4.0";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -443,6 +449,20 @@ function distance(a,b){
 }
 const pad2=v=>String(v).padStart(2,"0");
 const today=()=>{ const d=new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };
+const ymd=d=>`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+/* 日付は必ず YYYY-MM-DD。シートを往復するとセルが日付型になり "Tue Aug 11 2026 …" で返ることがある。
+   その文字列には書き手の時差(+0700など)が付くので、new Date() に通すと端末の時差で1日ずれる。
+   暦の上の日付をそのまま読むのが正しいので、文字列から直接拾う。 */
+const MON3={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+const normDate=v=>{
+  const s=String(v??"").trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m=s.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);      /* "Tue Aug 11 2026 …" */
+  if(m&&MON3[m[1]]) return `${m[3]}-${pad2(MON3[m[1]])}-${pad2(m[2])}`;
+  const d=new Date(s);
+  return isNaN(d.getTime()) ? "" : ymd(d);
+};
 const thisYear=()=>new Date().getFullYear();
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -451,7 +471,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
          scores:{hid:{loc,room,meal,fac,svc,memo}}, wants:{hid:date}, radius, car}
    シード外の宿は hotels ストアに実データで生成（hidは x- プレフィックス）。 */
 const KEY1="bonvoy:v1", KEY2="bonvoy:v2";
-let state={stays:{}, hotels:{}, scores:{}, wants:{}, radius:800, car:"m3"};
+let state={stays:{}, hotels:{}, scores:{}, wants:{}, bonus:{}, radius:800, car:"m3"};
 (function load(){
   try{
     const raw2=localStorage.getItem(KEY2);
@@ -465,7 +485,27 @@ let state={stays:{}, hotels:{}, scores:{}, wants:{}, radius:800, car:"m3"};
     }
   }catch(e){}
 })();
-for(const k of ["stays","hotels","scores","wants"]) if(!state[k]) state[k]={};
+for(const k of ["stays","hotels","scores","wants","bonus"]) if(!state[k]) state[k]={};
+(function repairDates(){        /* v1.3.2: 同期で日付がDate文字列になった記録を正規化して畳む */
+  let fixed=0;
+  for(const hid in state.stays){
+    const seen={}, out=[];
+    for(const s of state.stays[hid]){
+      const d=normDate(s.d);
+      if(!d){ fixed++; continue; }
+      if(d!==s.d) fixed++;
+      if(seen[d]){                /* 同じ日が2件になったら情報の多い方を残す */
+        if(Object.keys(s).length>Object.keys(seen[d]).length) Object.assign(seen[d],s,{d});
+        fixed++; continue;
+      }
+      const r=Object.assign({},s,{d}); seen[d]=r; out.push(r);
+    }
+    out.sort((a,b)=>a.d<b.d?-1:1);
+    if(out.length) state.stays[hid]=out; else delete state.stays[hid];
+  }
+  for(const hid in state.wants){ const d=normDate(state.wants[hid]); if(d) state.wants[hid]=d; }
+  if(fixed) try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}
+})();
 reindex();
 try{ if(!localStorage.getItem(KEY2)) localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){}  /* v1→v2移行を即時確定 */
 const save=()=>{ try{ localStorage.setItem(KEY2,JSON.stringify(state)); }catch(e){ notify("保存に失敗しました。","err"); } syncSoon(); };
@@ -497,15 +537,19 @@ function nightsOfStayInYear(s,y){        /* 年またぎは泊日ベースで按
   return cnt;
 }
 const nightsInYear=y=>stayList().reduce((a,s)=>a+nightsOfStayInYear(s,y),0);
+/* ボーナス泊（クレカ特典など、実際には泊まっていない加算ぶん）。年ごとに手で入れる。
+   ティア判定と年間泊数の表示にだけ効く。判子・通算泊数・双六のマスは実泊のまま。 */
+const bonusOf=y=>Math.max(0,Math.floor(+(state.bonus||{})[y]||0));
+const qualNights=y=>nightsInYear(y)+bonusOf(y);
 const totalNights=()=>stayList().reduce((a,s)=>a+(s.n||1),0);
 function addStay(hid,rec){
   if(!state.stays[hid]) state.stays[hid]=[];
   if(state.stays[hid].some(s=>s.d===rec.d)){ notify("同じチェックイン日の記録が既にあります。"); return false; }
-  const before=nightsInYear(thisYear());
+  const before=qualNights(thisYear());
   state.stays[hid].push(rec);
   state.stays[hid].sort((a,b)=>a.d<b.d?-1:1);
   save(); pendingAdvance=true;
-  pendingTier=tierCrossed(before, nightsInYear(thisYear()));
+  pendingTier=tierCrossed(before, qualNights(thisYear()));
   return true;
 }
 function slugify(name){
@@ -578,13 +622,13 @@ function worldStays(){
   return stayList().slice().sort((a,b)=>a.d<b.d?1:-1);
 }
 function renderWorld(){
-  const y=thisYear(), yn=nightsInYear(y), tot=totalNights(), nt=nextTier(yn);
+  const y=thisYear(), yn=qualNights(y), tot=totalNights(), nt=nextTier(yn);
   const stays=worldStays();
   const hidCount=new Set(stays.map(s=>s.hid)).size;
   const countries=[...new Set(stays.map(s=>hotelInfo(s.hid)?.country).filter(Boolean))];
   document.getElementById("whud").innerHTML=
     `<span class="wnum">${yn}<small>泊</small></span>
-     <div class="wsub">${y}年・${countries.length}カ国 ${hidCount}宿（通算${tot}泊）<br>`+
+     <div class="wsub">${y}年${bonusOf(y)?`（実泊${nightsInYear(y)}＋ボーナス${bonusOf(y)}）`:``}・${countries.length}カ国 ${hidCount}宿（通算${tot}泊）<br>`+
      (nt?`${esc(nt[1])}まで <b>あと${nt[0]-yn}泊</b>`:`<b>アンバサダー達成</b>`)+`</div>`;
   const b=document.getElementById("wboard");
   b.innerHTML=`<img class="wenv" src="${WORLD_ENV}" alt=""><div class="wlayer" id="wlayer"></div>`;
@@ -595,7 +639,7 @@ function renderWorld(){
 function drawWorld(prog){
   const layer=document.getElementById("wlayer"); if(!layer) return;
   const px=(layer.clientWidth||390)/WORLD_W;      /* 自然px→表示px */
-  const stays=worldStays(), yn=nightsInYear(thisYear()), nt=nextTier(yn);
+  const stays=worldStays(), yn=qualNights(thisYear()), nt=nextTier(yn);
   const items=[];
   stays.forEach((st,i)=>{
     const z=Z_NEWEST+(i+prog)*WORLD_DZ; if(z>1.24) return;
@@ -638,7 +682,9 @@ function drawWorld(prog){
         style="left:${wpct(WORLD_CX,WORLD_W)};top:${wpct(gy,WORLD_H)};`+
         `width:${wpct(gw,WORLD_W)};opacity:${gop}">`;
       /* 銘板: 何の門で、あと何泊かを門の下に掲げる */
-      const pw=gw*0.72, ph=pw*0.20, py=gy-gw*GATE_AR*0.06;
+      /* 銘板は門の足元より下に置く。v3の門は脚・幟が根本まで伸びていて、
+         門に重ねると意匠を隠すうえに文字が読めない。 */
+      const pw=gw*0.72, ph=pw*0.20, py=gy+ph*1.05;
       const fs=ph*0.52, c=TIER_COLOR[nt[1]]||["#C7973F","#F6E7C1"];
       svg+=`<g opacity="${gop}" transform="translate(${WORLD_CX},${py})">
         <rect x="${-pw/2}" y="${-ph}" width="${pw}" height="${ph}" rx="${ph*0.28}"
@@ -820,8 +866,35 @@ function render(){
   if(pendingTier){ const t=pendingTier; pendingTier=null; setTimeout(()=>tierCelebrate(t), curTab==="world"?820:200); }
   if(curTab==="rec") renderRec();
   if(curTab==="book") renderBook();
-  if(curTab==="rally") renderRally();
+  if(curTab==="rally"){ renderRally(); renderBonus(); }
 }
+let bonusShown="";
+function renderBonus(){
+  const el=document.getElementById("bonusRows"); if(!el) return;
+  const ys=[...new Set([String(thisYear()),...Object.keys(state.bonus||{})])].sort().reverse();
+  const key=ys.join(",");
+  if(key===bonusShown && el.children.length) return;   /* 年の顔ぶれが同じなら作り直さない
+                                                          （入力中に innerHTML を差し替えると落ちる） */
+  bonusShown=key;
+  el.innerHTML=ys.map(y=>
+    `<div class="formrow"><label>${esc(y)}年</label>
+       <input type="number" min="0" step="1" data-y="${esc(y)}" value="${bonusOf(y)||""}" placeholder="0"></div>`).join("");
+}
+document.getElementById("bonusRows").addEventListener("change",e=>{
+  const y=e.target.dataset&&e.target.dataset.y; if(!y) return;
+  const v=Math.max(0,Math.floor(+e.target.value||0));
+  if(!state.bonus) state.bonus={};
+  if(v) state.bonus[y]=v; else delete state.bonus[y];
+  save();
+  setTimeout(render,0);                                /* blurの最中に描き直さない */
+});
+window.__bonusAdd=()=>{
+  const y=(prompt("年を入れてください（例: 2025）",String(thisYear()-1))||"").trim();
+  if(!/^\d{4}$/.test(y)) return;
+  if(!state.bonus) state.bonus={};
+  if(!(y in state.bonus)) state.bonus[y]=0;
+  renderBonus();
+};
 function renderRally(){
   document.getElementById("quests").innerHTML=
     `<div class="eyebrow" style="margin:16px 2px 4px">世界のお題</div>`+
@@ -1158,11 +1231,16 @@ document.getElementById("carSel").addEventListener("change",e=>{ state.car=e.tar
    マージは足し算のみ（サーバ側 mergeState と同じ規則）。同期で記録が減ることはない。 */
 let syncT, syncing=false;
 const syncCfg=()=>state.sync||{};
+const localStamp=iso=>{        /* サーバはUTCのISOを返すので端末の時刻で表示する */
+  const d=new Date(iso);
+  return isNaN(d.getTime()) ? String(iso).replace("T"," ").slice(0,16)
+                            : `${ymd(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
 function syncStateText(){
   const el=document.getElementById("syncState"); if(!el) return;
   const c=syncCfg();
   el.textContent = !c.url ? "未設定です。記録はこの端末にしかありません。"
-    : c.at ? `最終同期: ${c.at.replace("T"," ").slice(0,16)}`
+    : c.at ? `最終同期: ${localStamp(c.at)}`
     : "設定済み。まだ一度も同期していません。";
 }
 function mergeIn(remote){                          /* サーバから返った全状態を手元へ足す */
@@ -1171,7 +1249,12 @@ function mergeIn(remote){                          /* サーバから返った�
   for(const hid in (remote.stays||{})){
     const cur=state.stays[hid]||(state.stays[hid]=[]);
     const seen=new Set(cur.map(s=>s.d));
-    remote.stays[hid].forEach(s=>{ if(s&&s.d&&!seen.has(s.d)){ cur.push(s); seen.add(s.d); added++; } });
+    remote.stays[hid].forEach(s=>{
+      if(!s) return;
+      const d=normDate(s.d);                       /* 壊れた日付はここで弾く（取り込んで増やさない） */
+      if(!d||seen.has(d)) return;
+      cur.push(Object.assign({},s,{d})); seen.add(d); added++;
+    });
     cur.sort((a,b)=>a.d<b.d?-1:1);
   }
   for(const k of ["hotels","scores","wants"])
@@ -1279,7 +1362,10 @@ const PRESET_HOTELS={
   "x-bankside-london":{name:"バンクサイド・ホテル ロンドン",brand:"autograph",country:"イギリス",city:"ロンドン",loc:"city"},
   "x-sheraton-fra":{name:"Sheraton Frankfurt Airport",brand:"sheraton",country:"ドイツ",city:"フランクフルト",loc:"city"},
   "x-jw-hanoi":{name:"JWマリオット・ホテル・ハノイ",brand:"jw",country:"ベトナム",city:"ハノイ",loc:"city"},
-  "x-itc-bengaluru":{name:"ITC Gardenia, Bengaluru",brand:"luxcol",country:"インド",city:"ベンガルール",loc:"city"}
+  "x-itc-bengaluru":{name:"ITC Gardenia, Bengaluru",brand:"luxcol",country:"インド",city:"ベンガルール",loc:"city"},
+  "x-lemeridien-dhaka":{name:"Le Méridien Dhaka",brand:"lemeridien",country:"バングラデシュ",city:"ダッカ",loc:"city"},
+  "x-fourpoints-bkk15":{name:"フォーポイント バンコク スクンヴィット15",brand:"fourpoints",country:"タイ",city:"バンコク",loc:"city"},
+  "x-marriott-tangplaza":{name:"シンガポール・マリオット・タンプラザ",brand:"marriott",country:"シンガポール",city:"シンガポール",loc:"city"}
 };
 const PRESET_STAYS=[
   ["x-publichouse-bkk","2026-01-11",2,12972],["x-westin-dhaka","2026-01-13",3,11196],["x-mea-bangkok","2026-01-16",2,740],
@@ -1288,10 +1374,16 @@ const PRESET_STAYS=[
   ["sheraton-miyako-osaka","2026-04-13",1,2482],["x-gekko-frankfurt","2026-04-20",6,27664],
   ["x-ortea-sicily","2026-04-29",3,30027],["x-bankside-london","2026-05-02",1,7111],["x-bankside-london","2026-05-04",1,7759],
   ["x-sheraton-fra","2026-05-07",1,6541],["x-jw-hanoi","2026-06-15",3,15228],["x-mea-bangkok","2026-06-18",4,6580],
-  ["x-itc-bengaluru","2026-06-22",2,5334]
+  ["x-itc-bengaluru","2026-06-22",2,5334],
+  /* 2025年（マリオットのアクティビティ画面より） */
+  ["westin-osaka","2025-09-16",1,5073],["x-lemeridien-dhaka","2025-11-04",2,9549],
+  ["x-fourpoints-bkk15","2025-11-06",4,9407],["x-marriott-tangplaza","2025-11-10",3,19766],
+  ["ritz-kyoto","2025-11-29",1,1000],["westin-miyako-kyoto","2025-12-05",1,6122],
+  ["x-jw-hanoi","2025-12-17",2,6699],["x-fourpoints-bkk15","2025-12-19",2,6603],
+  ["x-fourpoints-bkk15","2025-12-21",2,5070]
 ];
 window.__importShun=()=>{
-  if(!confirm("Shunの2026年履歴（17滞在・41泊）を取り込みます。よろしいですか？")) return;
+  if(!confirm("Shunの宿泊履歴（2025〜2026年・26滞在・59泊）を取り込みます。よろしいですか？")) return;
   for(const hid in PRESET_HOTELS) if(!state.hotels[hid]&&!byId[hid]) state.hotels[hid]=PRESET_HOTELS[hid];
   let added=0;
   PRESET_STAYS.forEach(([hid,d,n,earn])=>{
