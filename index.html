@@ -263,7 +263,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.5.1";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -1384,35 +1384,35 @@ window.__backupIn=()=>{
 };
 /* Shunの2026年実履歴（docs/宿泊履歴-取り込みメモ.md より。二重取り込みはチェックイン日で防止） */
 const PRESET_HOTELS={
-  "x-publichouse-bkk":{name:"Public House Bangkok",brand:"designhotels",country:"タイ",city:"バンコク",loc:"city"},
+  "x-publichouse-bangkok":{name:"Public House Bangkok, a Member of Design Hotels",brand:"designhotels",country:"タイ",city:"バンコク",loc:"city"},
   "x-westin-dhaka":{name:"The Westin Dhaka",brand:"westin",country:"バングラデシュ",city:"ダッカ",loc:"city"},
-  "x-mea-bangkok":{name:"MEAバンコク・タウンホール・スクンビット",brand:"execapt",country:"タイ",city:"バンコク",loc:"city"},
+  "x-mea-bangkok-townhall":{name:"マリオット・エグゼクティブ・アパートメント・バンコク・タウンホール・スクンビット",brand:"execapt",country:"タイ",city:"バンコク",loc:"city"},
   "x-fairfield-kunshan":{name:"Fairfield by Marriott Kunshan",brand:"fairfield",country:"中国",city:"昆山",loc:"city"},
   "x-jw-saigon":{name:"JWマリオット・ホテル＆スイート・サイゴン",brand:"jw",country:"ベトナム",city:"ホーチミン",loc:"city"},
-  "x-gekko-frankfurt":{name:"Gekko House Frankfurt",brand:"tribute",country:"ドイツ",city:"フランクフルト",loc:"city"},
-  "x-ortea-sicily":{name:"Ortea Palace Hotel, Sicily",brand:"autograph",country:"イタリア",city:"シラクーサ",loc:"resort"},
-  "x-bankside-london":{name:"バンクサイド・ホテル ロンドン",brand:"autograph",country:"イギリス",city:"ロンドン",loc:"city"},
-  "x-sheraton-fra":{name:"Sheraton Frankfurt Airport",brand:"sheraton",country:"ドイツ",city:"フランクフルト",loc:"city"},
+  "x-gekko-frankfurt":{name:"Gekko House, Frankfurt, a Tribute Portfolio Hotel",brand:"tribute",country:"ドイツ",city:"フランクフルト",loc:"city"},
+  "x-ortea-sicily":{name:"Ortea Palace Hotel, Sicily, Autograph Collection",brand:"autograph",country:"イタリア",city:"シラクーサ",loc:"resort"},
+  "x-bankside-london":{name:"バンクサイド・ホテル、オートグラフ コレクション",brand:"autograph",country:"イギリス",city:"ロンドン",loc:"city"},
+  "x-sheraton-fra-airport":{name:"Sheraton Frankfurt Airport Hotel and Conference Center",brand:"sheraton",country:"ドイツ",city:"フランクフルト",loc:"city"},
   "x-jw-hanoi":{name:"JWマリオット・ホテル・ハノイ",brand:"jw",country:"ベトナム",city:"ハノイ",loc:"city"},
-  "x-itc-bengaluru":{name:"ITC Gardenia, Bengaluru",brand:"luxcol",country:"インド",city:"ベンガルール",loc:"city"},
+  "x-itc-gardenia-bengaluru":{name:"ITC Gardenia, a Luxury Collection Hotel, Bengaluru",brand:"luxcol",country:"インド",city:"ベンガルール",loc:"city"},
   "x-lemeridien-dhaka":{name:"Le Méridien Dhaka",brand:"lemeridien",country:"バングラデシュ",city:"ダッカ",loc:"city"},
-  "x-fourpoints-bkk15":{name:"フォーポイント バンコク スクンヴィット15",brand:"fourpoints",country:"タイ",city:"バンコク",loc:"city"},
-  "x-marriott-tangplaza":{name:"シンガポール・マリオット・タンプラザ",brand:"marriott",country:"シンガポール",city:"シンガポール",loc:"city"}
+  "x-fourpoints-bkk-sukhumvit15":{name:"フォーポイントバイシェラトン・バンコク, スクンヴィット15",brand:"fourpoints",country:"タイ",city:"バンコク",loc:"city"},
+  "x-marriott-tangplaza-sg":{name:"シンガポール・マリオット・タンプラザ・ホテル",brand:"marriott",country:"シンガポール",city:"シンガポール",loc:"city"}
 };
 const PRESET_STAYS=[
-  ["x-publichouse-bkk","2026-01-11",2,12972],["x-westin-dhaka","2026-01-13",3,11196],["x-mea-bangkok","2026-01-16",2,740],
+  ["x-publichouse-bangkok","2026-01-11",2,12972],["x-westin-dhaka","2026-01-13",3,11196],["x-mea-bangkok-townhall","2026-01-16",2,740],
   ["x-fairfield-kunshan","2026-03-02",3,3708],["westin-osaka","2026-03-05",3,14052],
   ["cy-shijo","2026-04-03",1,500],["ritz-osaka","2026-04-04",1,1070],["x-jw-saigon","2026-04-08",4,17410],
   ["sheraton-miyako-osaka","2026-04-13",1,2482],["x-gekko-frankfurt","2026-04-20",6,27664],
   ["x-ortea-sicily","2026-04-29",3,30027],["x-bankside-london","2026-05-02",1,7111],["x-bankside-london","2026-05-04",1,7759],
-  ["x-sheraton-fra","2026-05-07",1,6541],["x-jw-hanoi","2026-06-15",3,15228],["x-mea-bangkok","2026-06-18",4,6580],
-  ["x-itc-bengaluru","2026-06-22",2,5334],
+  ["x-sheraton-fra-airport","2026-05-07",1,6541],["x-jw-hanoi","2026-06-15",3,15228],["x-mea-bangkok-townhall","2026-06-18",4,6580],
+  ["x-itc-gardenia-bengaluru","2026-06-22",2,5334],
   /* 2025年（マリオットのアクティビティ画面より） */
   ["westin-osaka","2025-09-16",1,5073],["x-lemeridien-dhaka","2025-11-04",2,9549],
-  ["x-fourpoints-bkk15","2025-11-06",4,9407],["x-marriott-tangplaza","2025-11-10",3,19766],
+  ["x-fourpoints-bkk-sukhumvit15","2025-11-06",4,9407],["x-marriott-tangplaza-sg","2025-11-10",3,19766],
   ["ritz-kyoto","2025-11-29",1,1000],["westin-miyako-kyoto","2025-12-05",1,6122],
-  ["x-jw-hanoi","2025-12-17",2,6699],["x-fourpoints-bkk15","2025-12-19",2,6603],
-  ["x-fourpoints-bkk15","2025-12-21",2,5070]
+  ["x-jw-hanoi","2025-12-17",2,6699],["x-fourpoints-bkk-sukhumvit15","2025-12-19",2,6603],
+  ["x-fourpoints-bkk-sukhumvit15","2025-12-21",2,5070]
 ];
 window.__importShun=()=>{
   if(!confirm("Shunの宿泊履歴（2025〜2026年・26滞在・59泊）を取り込みます。よろしいですか？")) return;
