@@ -101,27 +101,71 @@
     padding:6px 16px;font-size:12.5px;font-weight:700;box-shadow:0 2px 8px rgba(74,59,46,.15)}
   @keyframes stampin{0%{transform:scale(2.4);opacity:0}55%{transform:scale(0.94);opacity:1}100%{transform:scale(1)}}
   @keyframes stampout{to{opacity:0;transform:scale(0.96)}}
-  /* ===== ティア到達の祝賀 ===== */
-  #stampfx.tier{background:radial-gradient(closest-side,rgba(24,20,14,.62),rgba(24,20,14,.88))}
+  /* ===== ティア到達の祝賀 v3 =====
+     チャッピーの tier-gate-identity-v3.md に沿った3拍。
+       ① 接近の灯 0-450ms   冠が先に目を覚まし、路面へ光条が伸びる
+       ② 閾の開き 450-1500ms 開口の光幕が中央から割れ、門が6%だけ膨らんで戻る
+       ③ 記念の標 1500-2600ms 銘板が結ばれ、路肩へ縮んで残る
+     紙吹雪や回転は使わない。道が見えたままであること。--d はアンバサダーの間（0.7s）。 */
+  #stampfx.tier{background:radial-gradient(closest-side,rgba(24,20,14,.10),rgba(24,20,14,.58))}
   #stampfx.tier.bye .tierfx{animation:tierout .6s forwards}
-  .tierfx{position:relative;display:flex;flex-direction:column;align-items:center;width:100%}
-  .tierburst{position:absolute;top:50%;left:50%;width:520px;height:520px;margin:-260px 0 0 -260px;
-    border-radius:50%;background:radial-gradient(closest-side,var(--tc),transparent 70%);
-    opacity:0;animation:tierburst 1.5s cubic-bezier(.16,1,.3,1) forwards}
-  .tiergate{width:78%;max-width:330px;display:block;filter:drop-shadow(0 0 26px var(--tc));
-    animation:tiergate 1.5s cubic-bezier(.16,1,.3,1) both}
-  .tiername{margin-top:6px;font-size:34px;font-weight:800;letter-spacing:.3em;color:var(--tt);
-    text-shadow:0 0 22px var(--tc),0 2px 6px rgba(0,0,0,.6);
+  .tierfx{position:relative;display:flex;flex-direction:column;align-items:center;width:100%;--d:0s}
+  .tierfx.amb{--d:.7s}
+  /* ① 冠から路面へ伸びる3条。放射状には散らさない（道を隠さないため） */
+  .tierrays{position:absolute;top:34%;left:50%;width:0;height:0}
+  .tierrays i{position:absolute;left:0;top:0;width:13px;height:300px;margin-left:-6.5px;
+    border-radius:50% 50% 0 0;background:linear-gradient(180deg,var(--tg),transparent 78%);
+    opacity:0;mix-blend-mode:screen;transform-origin:50% 0;
+    animation:tierray 1.4s var(--d) ease-out both}
+  .tierrays i:nth-child(1){--r:-17deg}
+  .tierrays i:nth-child(2){--r:0deg;animation-delay:calc(var(--d) + .09s)}
+  .tierrays i:nth-child(3){--r:17deg;animation-delay:calc(var(--d) + .18s)}
+  /* ② 門と、開口で割れる光幕 */
+  .tiergatewrap{position:relative;width:70%;max-width:300px;
+    animation:tiergate 1.5s var(--d) cubic-bezier(.16,1,.3,1) both}
+  .tiergate{width:100%;display:block;filter:drop-shadow(0 0 10px var(--tg))}
+  .tiercurtain{position:absolute;left:26%;right:26%;top:34%;bottom:6%;overflow:hidden}
+  .tiercurtain i{position:absolute;top:0;height:100%;width:52%;
+    animation:tiercurtain 1.05s calc(var(--d) + .45s) cubic-bezier(.5,0,.2,1) both}
+  .tiercurtain i:first-child{left:0;transform-origin:left;
+    background:linear-gradient(90deg,color-mix(in srgb,var(--tg) 60%,transparent),transparent)}
+  .tiercurtain i:last-child{right:0;transform-origin:right;
+    background:linear-gradient(270deg,color-mix(in srgb,var(--tg) 60%,transparent),transparent)}
+  /* ③ 記念の標。結ばれてから路肩へ縮む */
+  .tierplate{margin-top:10px;padding:9px 20px 11px;text-align:center;border-radius:3px;
+    border:1px solid var(--tc);background:rgba(20,22,28,.86);
+    box-shadow:0 10px 26px rgba(12,10,8,.5),inset 0 0 0 3px rgba(255,255,255,.06);
+    animation:tierplate 1.1s calc(var(--d) + 1.5s) cubic-bezier(.2,1.2,.4,1) both}
+  .tiereyebrow{font-size:9.5px;letter-spacing:.34em;color:var(--tc);margin-bottom:3px}
+  .tiername{font-size:30px;font-weight:700;letter-spacing:.26em;color:var(--tt);
+    text-shadow:0 0 18px var(--tg);font-family:'Hiragino Mincho ProN','Yu Mincho',serif;line-height:1.2}
+  .tiersub{margin-top:5px;font-size:11.5px;font-weight:700;letter-spacing:.18em;color:var(--tc)}
+  /* アンバサダーだけの別格: 黒漆の銘板に朱の判子、外柱から4条の灯 */
+  .tierfx.amb .tierplate{background:#141013;border:1px solid #C9A050;border-radius:2px}
+  .tierfx.amb .tiername{color:#F0D9A6}
+  .tierstamp{position:absolute;right:-9px;top:-9px;width:26px;height:26px;border-radius:3px;
+    background:#B63B2E;box-shadow:0 2px 6px rgba(0,0,0,.5);color:#F4EBD8;font-size:13px;
+    display:flex;align-items:center;justify-content:center;transform:rotate(-7deg);
     font-family:'Hiragino Mincho ProN','Yu Mincho',serif;
-    animation:tiername .9s .45s cubic-bezier(.2,1.5,.4,1) both}
-  .tiersub{margin-top:8px;padding:6px 18px;border-radius:999px;font-size:12.5px;font-weight:700;
-    color:var(--tt);border:1.5px solid var(--tc);background:rgba(20,18,14,.6);letter-spacing:.16em;
-    animation:tiername .9s .68s cubic-bezier(.2,1.5,.4,1) both}
-  @keyframes tierburst{0%{opacity:0;transform:scale(.2)}35%{opacity:.85}100%{opacity:0;transform:scale(1.25)}}
-  @keyframes tiergate{0%{opacity:0;transform:scale(.32) translateY(38px)}
-    60%{opacity:1;transform:scale(1.04) translateY(0)}100%{opacity:1;transform:scale(1)}}
-  @keyframes tiername{0%{opacity:0;transform:scale(1.9)}60%{opacity:1;transform:scale(.96)}100%{transform:scale(1)}}
-  @keyframes tierout{to{opacity:0;transform:scale(1.06)}}
+    animation:tierstamp .5s calc(var(--d) + 2.05s) cubic-bezier(.2,1.7,.4,1) both}
+  .tierlant{position:absolute;bottom:26%;width:2px;height:34%;background:linear-gradient(0deg,#F0C560,transparent);
+    opacity:0;animation:tierlant 1.5s calc(var(--d) + .55s) ease-out both}
+  .tierlant:nth-child(1){left:12%}.tierlant:nth-child(2){left:24%;animation-delay:calc(var(--d) + .72s)}
+  .tierlant:nth-child(3){right:24%;animation-delay:calc(var(--d) + .64s)}
+  .tierlant:nth-child(4){right:12%;animation-delay:calc(var(--d) + .8s)}
+  @keyframes tierray{0%{opacity:0;transform:rotate(var(--r)) scaleY(.18)}
+    32%{opacity:.6}72%{opacity:.34}100%{opacity:0;transform:rotate(var(--r)) scaleY(1.12)}}
+  @keyframes tiergate{0%{opacity:0;transform:scale(.9);filter:brightness(.82)}
+    30%{opacity:1;filter:brightness(1)}62%{transform:scale(1.06);filter:brightness(1.14)}
+    100%{opacity:1;transform:scale(1);filter:brightness(1)}}
+  @keyframes tiercurtain{0%{opacity:0;transform:scaleX(1)}22%{opacity:.95}100%{opacity:0;transform:scaleX(0)}}
+  @keyframes tierplate{0%{opacity:0;transform:translateY(14px) scale(.9)}
+    55%{opacity:1;transform:translateY(0) scale(1)}
+    100%{opacity:1;transform:translateY(26px) scale(.78)}}
+  @keyframes tierstamp{0%{opacity:0;transform:rotate(-24deg) scale(1.8)}100%{opacity:1;transform:rotate(-7deg) scale(1)}}
+  @keyframes tierlant{0%{opacity:0;transform:translateY(16px) scaleY(.3)}
+    40%{opacity:.85}100%{opacity:0;transform:translateY(-40px) scaleY(1)}}
+  @keyframes tierout{to{opacity:0;transform:scale(1.04)}}
   /* ===== v1.0.0: 世界・記録・フォーム ===== */
   .wboard{margin:14px -18px 0;overflow:hidden;border-radius:0 0 18px 18px}
   .wboard .wenvwrap,.wboard{position:relative}
@@ -263,7 +307,7 @@
 
 <script>
 "use strict";
-const APP_VERSION = "1.5.1";
+const APP_VERSION = "1.6.0";
 const EDITION = "2026.08.10 タイ・日本編";   /* ホテルデータを収録した日付 */
 
 /* ---------- ホテルデータ ----------
@@ -554,10 +598,15 @@ function addStay(hid,rec){
   pendingTier=tierCrossed(before, qualNights(thisYear()));
   return true;
 }
+/* hidは記録の永久キーなので、名前から決まって・衝突しないこと。
+   日本語名はasciiが空になるので名前のハッシュを使う。決定的なので、
+   同じ宿を紗也乃の端末で登録しても同じidになり、同期でひとつに畳まれる。 */
 function slugify(name){
-  let s="x-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,28);
-  if(s==="x-") s="x-h";
-  let base=s,i=2; while(state.hotels[s]||byId[s]) s=base+"-"+(i++);
+  const nm=name.trim();
+  const ascii=nm.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,28);
+  let s="x-"+(ascii||sealHash(nm).toString(36));
+  let base=s,i=2;
+  while(byId[s]||(state.hotels[s]&&state.hotels[s].name!==nm)) s=base+"-"+(i++);
   return s;
 }
 
@@ -709,21 +758,34 @@ function drawWorld(prog){
      <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="2" seed="9"/>
      <feDisplacementMap in="SourceGraphic" scale="1.2"/></filter></defs>${svg}</svg>`;
 }
-/* ティア到達の祝賀: 門が輝いて開き、称号が浮かび上がって、紋章が残る */
+/* ティアごとの灯の色温度（v3）。銀は暖かい白銀、金は真鍮、プラチナは冷たい白青、
+   チタンは青緑、アンバサダーは金に朱を差す。素材の輪郭が主役なので光は控えめに。 */
+const TIER_GLOW={"シルバー":"#EAF2F7","ゴールド":"#F3C55A","プラチナ":"#CFE6FF",
+                 "チタン":"#7FE3F0","アンバサダー":"#F0C560"};
+/* ティア到達の祝賀 v3: 接近の灯 → 閾の開き → 記念の標。
+   アンバサダーだけ700msの間を置いて4秒の儀式にする。 */
 function tierCelebrate(tier){
   const el=document.getElementById("stampfx");
   const g=WORLD_GATES.find(g=>g[0]===tier[0]);
   const c=TIER_COLOR[tier[1]]||["#C7973F","#F6E7C1"];
-  el.innerHTML=`<div class="tierfx" style="--tc:${c[0]};--tt:${c[1]}">
-    <div class="tierburst"></div>
-    ${g?`<img class="tiergate" src="${g[1]}" alt="">`:""}
-    <div class="tiername">${esc(tier[1])}</div>
-    <div class="tiersub">${tier[0]}泊 達成</div>
+  const glow=TIER_GLOW[tier[1]]||"#F3C55A";
+  const amb=tier[1]==="アンバサダー", dur=amb?4000:2600;
+  el.innerHTML=`<div class="tierfx${amb?" amb":""}" style="--tc:${c[0]};--tt:${c[1]};--tg:${glow}">
+    <div class="tierrays"><i></i><i></i><i></i></div>
+    ${amb?'<i class="tierlant"></i><i class="tierlant"></i><i class="tierlant"></i><i class="tierlant"></i>':""}
+    ${g?`<div class="tiergatewrap"><img class="tiergate" src="${g[1]}" alt="">
+         <div class="tiercurtain"><i></i><i></i></div></div>`:""}
+    <div class="tierplate">
+      <div class="tiereyebrow">NEW TIER</div>
+      <div class="tiername">${esc(tier[1])}</div>
+      <div class="tiersub">${tier[0]}泊 達成</div>
+      ${amb?'<span class="tierstamp">証</span>':""}
+    </div>
   </div>`;
   el.classList.remove("bye"); el.classList.add("on","tier");
   clearTimeout(fxT1); clearTimeout(fxT2);
-  fxT1=setTimeout(()=>el.classList.add("bye"),2600);
-  fxT2=setTimeout(()=>{ el.classList.remove("on","bye","tier"); el.innerHTML=""; },3200);
+  fxT1=setTimeout(()=>el.classList.add("bye"),dur);
+  fxT2=setTimeout(()=>{ el.classList.remove("on","bye","tier"); el.innerHTML=""; },dur+600);
 }
 /* 記録前後でティアを跨いだかを見る */
 function tierCrossed(before,after){
@@ -1082,24 +1144,29 @@ window.__hfilter=()=>{
      <span class="nm">${esc(i.name)}</span><span class="ct">${esc(i.country||"")}${esc(i.city?"・"+i.city:"")}</span></button>`).join("")
     ||`<p class="settext">${q?"該当なし。下の「リストにない宿」からどうぞ。":"検索するか、泊まったことのある宿から選択。"}</p>`;
 };
-window.__newWorldHotel=()=>{
-  openSheet(sheetHead("世界の宿を登録")+
+window.__newWorldHotel=(useFix)=>{
+  const fix=useFix&&lastFix;                        /* GPSから来たときだけ実測座標を添える */
+  openSheet(sheetHead(fix?"いまいる場所を宿として登録":"世界の宿を登録")+
     `<div class="formrow"><label>ホテル名（正式名）</label><input type="text" id="w-name" placeholder="例: The Westin Dhaka"></div>
      <div class="formrow"><label>ブランド</label><select id="w-brand">${Object.keys(BRANDS).map(k=>`<option value="${k}">${esc(BRANDS[k].label)}</option>`).join("")}</select></div>
      <div class="formrow"><label>国</label><input type="text" id="w-country" placeholder="例: バングラデシュ"></div>
      <div class="formrow"><label>都市</label><input type="text" id="w-city" placeholder="例: ダッカ"></div>
      <div class="formrow"><label>立地タイプ</label><select id="w-loc"><option value="city">都市</option><option value="resort">リゾート</option><option value="ryokan">旅館・リトリート</option></select></div>
-     <p class="settext">実在の宿を正式名で。判子と世界のミニチュアはここから自動生成されます。</p>
-     <div class="fbtnrow"><button class="btn primary" onclick="window.__saveWorldHotel()">登録して記録へ</button></div>`);
+     <p class="settext">実在の宿を正式名で。判子と世界のミニチュアはここから自動生成されます。`+
+     (fix?`<br><b>この場所の座標（${fix.lat.toFixed(5)}, ${fix.lng.toFixed(5)}）を一緒に保存します。</b>次からはここで「現在地でチェックイン」が効きます。`
+        :`<br>座標は保存されないので、この宿はGPSチェックインの対象になりません。現地で「現在地でチェックイン」から登録すると座標が付きます。`)+`</p>
+     <div class="fbtnrow"><button class="btn primary" onclick="window.__saveWorldHotel(${fix?1:0})">登録して記録へ</button></div>`);
 };
-window.__saveWorldHotel=()=>{
+window.__saveWorldHotel=(useFix)=>{
   const name=document.getElementById("w-name").value.trim();
   if(!name){ notify("ホテル名を入れてください。","err"); return; }
   const hid=slugify(name);
-  state.hotels[hid]={name, brand:document.getElementById("w-brand").value,
+  const h={name, brand:document.getElementById("w-brand").value,
     country:document.getElementById("w-country").value.trim(),
     city:document.getElementById("w-city").value.trim(),
     loc:document.getElementById("w-loc").value};
+  if(useFix&&lastFix){ h.lat=lastFix.lat; h.lng=lastFix.lng; }
+  state.hotels[hid]=Object.assign({},state.hotels[hid],h);
   save(); window.__recFor(hid);
 };
 
@@ -1183,17 +1250,43 @@ function stampFx(i){
   fxT2=setTimeout(()=>el.classList.remove("on","bye"),1900);
 }
 
-/* ---------- GPSチェックイン ---------- */
+/* ---------- GPSチェックイン ----------
+   シード116軒だけでなく、自分で登録した宿のうち座標を持つものも対象にする。
+   座標は登録時に端末のGPSから実測したものだけ。手入力させない（捏造禁止）。 */
+let lastFix=null;
+function gpsPool(){
+  const out=HOTELS.slice();
+  for(const hid in state.hotels){
+    const c=state.hotels[hid];
+    if(c && typeof c.lat==="number" && typeof c.lng==="number")
+      out.push({id:hid,name:c.name,lat:c.lat,lng:c.lng});
+  }
+  return out;
+}
+window.__wider=()=>{                                /* 半径を1段広げて測り直す */
+  const next=Math.min(2000,(state.radius||800)+600);
+  if(next===state.radius){ notify("すでに最大の2000mです。","err"); return; }
+  state.radius=next; save();
+  const r=document.getElementById("radius"); if(r) r.value=next;
+  if(typeof radLabel==="function") radLabel();
+  closeSheet(); notify(`半径を${next}mにしました。もう一度チェックインしてください。`);
+};
 document.getElementById("stampBtn").addEventListener("click",()=>{
   const btn=document.getElementById("stampBtn");
   btn.disabled=true; btn.textContent="測位中…";
   navigator.geolocation.getCurrentPosition(pos=>{
     btn.disabled=false; btn.textContent="現在地でチェックイン";
     const p={lat:pos.coords.latitude,lng:pos.coords.longitude};
-    const near=HOTELS.map(h=>({h,d:distance(p,h)})).filter(x=>x.d<=state.radius).sort((a,b)=>a.d-b.d);
+    lastFix=p;                                     /* 「ここを登録」で使う実測座標 */
+    const near=gpsPool().map(h=>({h,d:distance(p,h)})).filter(x=>x.d<=state.radius).sort((a,b)=>a.d-b.d);
     if(!near.length){
-      const alls=HOTELS.map(h=>({h,d:distance(p,h)})).sort((a,b)=>a.d-b.d)[0];
-      notify(alls?`半径${state.radius}m以内にシード宿なし。最寄りは ${alls.h.name}（約${Math.round(alls.d)}m）。リスト外の宿は「＋宿泊を記録」から。`:"シード宿がありません。","err");
+      const alls=gpsPool().map(h=>({h,d:distance(p,h)})).sort((a,b)=>a.d-b.d)[0];
+      openSheet(sheetHead("この場所に登録済みの宿がありません")+
+        `<p class="settext">半径${state.radius}m以内に見つかりませんでした。`+
+        (alls?`最寄りは <b>${esc(alls.h.name)}</b>（約${Math.round(alls.d)}m）です。`:"")+
+        `<br>いま泊まっている宿がまだ台帳にないなら、この場所の座標ごと登録できます。次からはここでチェックインが効くようになります。</p>
+         <div class="fbtnrow"><button class="btn primary" onclick="window.__newWorldHotel(1)">いまいる場所を新しい宿として登録</button></div>
+         <div class="fbtnrow"><button class="btn" onclick="window.__wider()">半径を広げてもう一度さがす</button></div>`);
     }else if(near.length===1){ gpsStamp(near[0].h); }
     else openSheet(sheetHead("どのホテルにいますか？")+near.map(x=>
       `<button class="choosebtn" onclick="window.__gps('${x.h.id}')"><span>${esc(x.h.name)}</span><span class="d">${Math.round(x.d)}m</span></button>`).join(""));

@@ -21,7 +21,7 @@ var TOKEN    = '';          // クライアントと共有する合言葉。空�
 /* ===== シート定義 ===== */
 var TABS = {
   stays:  ['hid', 'ホテル名', 'チェックイン', '泊数', '価格', 'ポイント利用', 'アップグレード', '獲得ポイント', 'メモ'],
-  hotels: ['hid', 'ホテル名', 'ブランド', '国', 'エリア', '立地'],
+  hotels: ['hid', 'ホテル名', 'ブランド', '国', 'エリア', '立地', '緯度', '経度'],
   scores: ['hid', '立地', '部屋', '食事', '施設', 'サービス', 'メモ'],
   wants:  ['hid', '登録日'],
   meta:   ['キー', '値']
@@ -68,6 +68,9 @@ function sheetOf(ss, name) {
   } else if (sh.getLastRow() === 0) {
     sh.appendRow(TABS[name]);
     sh.setFrozenRows(1);
+  } else if (sh.getLastColumn() < TABS[name].length) {
+    // 列が増えたとき（v1.6.0で hotels に緯度・経度を足した）に見出しを揃える
+    sh.getRange(1, 1, 1, TABS[name].length).setValues([TABS[name]]);
   }
   return sh;
 }
@@ -122,10 +125,13 @@ function readState(ss) {
 
   rowsOf(sheetOf(ss, 'hotels')).forEach(function (r) {
     var hid = String(r[0] || '').trim(); if (!hid) return;
-    st.hotels[hid] = {
+    var h = {
       name: String(r[1] || ''), brand: String(r[2] || ''),
       country: String(r[3] || ''), city: String(r[4] || ''), loc: String(r[5] || 'city')
     };
+    // 座標は端末のGPSで実測したものだけが入る。あれば持ち回して他の端末でも使えるように
+    if (num(r[6]) !== undefined && num(r[7]) !== undefined) { h.lat = num(r[6]); h.lng = num(r[7]); }
+    st.hotels[hid] = h;
   });
 
   rowsOf(sheetOf(ss, 'scores')).forEach(function (r) {
@@ -192,7 +198,14 @@ function mergeState(remote, local) {
   ['hotels', 'scores', 'wants'].forEach(function (k) {
     var m = {};
     Object.keys(remote[k] || {}).forEach(function (h) { m[h] = remote[k][h]; });
-    Object.keys(local[k]  || {}).forEach(function (h) { m[h] = local[k][h]; });
+    Object.keys(local[k]  || {}).forEach(function (h) {
+      // 座標だけは消さない。片方の端末で実測した値を、持っていない端末の同期で失わないため
+      var prev = m[h], cur = local[k][h];
+      if (k === 'hotels' && prev && cur && cur.lat === undefined && prev.lat !== undefined) {
+        cur = Object.assign({}, cur, { lat: prev.lat, lng: prev.lng });
+      }
+      m[h] = cur;
+    });
     out[k] = m;
   });
 
@@ -216,7 +229,8 @@ function writeState(ss, st) {
 
   rows = Object.keys(st.hotels).sort().map(function (hid) {
     var h = st.hotels[hid];
-    return [hid, h.name || '', h.brand || '', h.country || '', h.city || '', h.loc || 'city'];
+    return [hid, h.name || '', h.brand || '', h.country || '', h.city || '', h.loc || 'city',
+            h.lat === undefined ? '' : h.lat, h.lng === undefined ? '' : h.lng];
   });
   replaceRows(sheetOf(ss, 'hotels'), rows);
 
